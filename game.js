@@ -355,6 +355,7 @@ function startGame() {
   scoreEl.textContent = "0";
   timerEl.classList.remove("urgent");
   timerEl.textContent = "15:00";
+  inputEl.parentElement.hidden = false;
   inputEl.disabled = false;
   inputEl.value = "";
   inputEl.focus();
@@ -372,6 +373,7 @@ function endGame() {
 
   timerEl.textContent = "00:00";
   timerEl.classList.remove("urgent");
+  inputEl.parentElement.hidden = true;
   inputEl.disabled = true;
   inputEl.value = "";
   btnAction.textContent = STRINGS[state.language].playAgain;
@@ -392,6 +394,7 @@ function resetToIdle() {
   timerEl.textContent = "15:00";
   timerEl.classList.remove("urgent");
   scoreEl.textContent = "0";
+  inputEl.parentElement.hidden = true;
   inputEl.disabled = true;
   inputEl.value = "";
   btnAction.textContent = STRINGS[state.language].start;
