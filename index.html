@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>World Countries Guessr</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Top bar -->
+    <header id="topbar">
+      <div id="lang-toggle">
+        <button id="btn-en" class="lang-btn active" aria-label="English">EN</button>
+        <span class="lang-sep">|</span>
+        <button id="btn-fr" class="lang-btn" aria-label="Français">FR</button>
+      </div>
+      <div id="timer-display">15:00</div>
+      <div id="score-display"><span id="score-label">Score</span> <span id="score-value">0</span>/197</div>
+    </header>
+
+    <!-- Map -->
+    <div id="map-container">
+      <svg id="world-map"></svg>
+    </div>
+
+    <!-- Input row -->
+    <div id="input-row">
+      <div id="input-wrap">
+        <input id="country-input" type="text" autocomplete="off" spellcheck="false"
+          placeholder="Type a country…" disabled />
+        <div id="feedback"></div>
+      </div>
+      <button id="btn-action">Start</button>
+    </div>
+
+    <!-- Continent table -->
+    <div id="table-wrap">
+      <table id="continent-table">
+        <thead>
+          <tr id="table-header"></tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Data -->
+  <script src="data/countries.js"></script>
+  <!-- D3 + TopoJSON from CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+  <!-- Game -->
+  <script src="game.js"></script>
+</body>
+</html>
