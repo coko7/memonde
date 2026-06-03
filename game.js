@@ -186,15 +186,16 @@ const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
 
 /* ── Map ── */
-let pathByNumeric = {}; // numeric → SVG path element
+let pathByNumeric = {};
 
 async function initMap() {
   const world = await d3.json(
     "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
   );
   const countries110m = topojson.feature(world, world.objects.countries);
-  const width = document.getElementById("map-container").clientWidth;
-  const height = document.getElementById("map-container").clientHeight;
+  const svgEl = document.getElementById("world-map");
+  const width = svgEl.clientWidth;
+  const height = svgEl.clientHeight;
 
   const projection = d3.geoNaturalEarth1()
     .fitSize([width, height], countries110m);
@@ -204,16 +205,19 @@ async function initMap() {
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
 
-  // Ocean background
+  // Ocean background — stays outside the zoom group so it always fills
   svg.append("rect")
-    .attr("width", width).attr("height", height)
-    .attr("fill", "#0d1b2a");
+    .attr("id", "ocean-bg")
+    .attr("width", width).attr("height", height);
+
+  // All country paths live in a group that receives the zoom transform
+  const mapGroup = svg.append("g").attr("id", "map-group");
 
   // Build numeric → iso2 lookup
   const numericToIso2 = {};
   for (const c of window.COUNTRIES) numericToIso2[c.numeric] = c.iso2;
 
-  svg.selectAll("path")
+  mapGroup.selectAll("path")
     .data(countries110m.features)
     .enter().append("path")
     .attr("d", path)
@@ -226,6 +230,21 @@ async function initMap() {
         pathByNumeric[+d.id] = this;
       }
     });
+
+  // Zoom behaviour
+  const zoom = d3.zoom()
+    .scaleExtent([1, 10])
+    .translateExtent([[0, 0], [width, height]])
+    .on("zoom", event => {
+      mapGroup.attr("transform", event.transform);
+    });
+
+  svg.call(zoom);
+
+  // Double-click resets to initial view instead of zooming in
+  svg.on("dblclick.zoom", () => {
+    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+  });
 }
 
 function highlightCountry(iso2, cls) {
@@ -455,6 +474,13 @@ function setLanguage(lang) {
   }
 }
 
+/* ── Theme toggle ── */
+function toggleTheme() {
+  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  document.getElementById("btn-theme").textContent = next === "dark" ? "☀️" : "🌙";
+}
+
 /* ── Event wiring ── */
 btnAction.addEventListener("click", () => {
   if (state.status === "idle") startGame();
@@ -468,6 +494,8 @@ inputEl.addEventListener("keydown", e => {
 
 btnEn.addEventListener("click", () => setLanguage("en"));
 btnFr.addEventListener("click", () => setLanguage("fr"));
+
+document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 
 /* ── Init ── */
 (async function init() {
