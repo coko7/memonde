@@ -3,6 +3,8 @@
 > [!WARNING]
 > This project was built with the assistance of [Claude Code](https://claude.ai/code) (Anthropic AI).
 
+<img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/08c06dc6-29f4-4f1b-ab16-a1c915df5eb1" />
+
 A single-page browser game where you try to name all 197 countries of the world within 15 minutes. Type a country name, hit Enter, and watch it light up on the map. See how many you can get before time runs out.
 
 ## Features
