@@ -77,9 +77,7 @@ function startGame() {
     el.classList.remove("guessed", "missed");
   });
 
-  // Reset table
   buildTable(state.language, state.guessed);
-  tableBody.innerHTML = "";
 
   // UI
   scoreEl.textContent = "0";
@@ -112,7 +110,7 @@ function endGame() {
   btnFr.disabled = false;
 
   revealMissed(state.guessed);
-  revealMissedInTable(state.guessed, state.language);
+  revealMissedInTable(state.guessed);
 }
 
 function resetToIdle() {
@@ -138,7 +136,6 @@ function resetToIdle() {
   });
 
   buildTable(state.language, state.guessed);
-  tableBody.innerHTML = "";
 }
 
 /* ── Submit handler ── */
@@ -168,7 +165,7 @@ function handleSubmit() {
 
   showFeedback("✓", "correct");
   highlightCountry(result.iso2, "guessed");
-  appendToTable(result.iso2, false, state.language);
+  revealInTable(result.iso2);
   updateTableHeader(state.language, state.guessed);
 
   if (state.score === 197) endGame();
@@ -192,9 +189,7 @@ function setLanguage(lang) {
   } else if (state.status === "ended") {
     btnAction.textContent = STRINGS[lang].playAgain;
     buildTable(state.language, state.guessed);
-    tableBody.innerHTML = "";
-    for (const iso2 of state.guessed) appendToTable(iso2, false, state.language);
-    revealMissedInTable(state.guessed, state.language);
+    revealMissedInTable(state.guessed);
   }
 }
 

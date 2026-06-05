@@ -176,67 +176,59 @@ function buildTable(language, guessed) {
   tableHeader.innerHTML = "";
   tableBody.innerHTML = "";
 
+  // Header
   for (const continent of CONTINENTS) {
     const th = document.createElement("th");
-
-    const localeContinent = str.continents[continent];
     const guessedCount = [...guessed].filter(iso2 =>
       window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
     ).length;
-    const totalCount = continentTotals[continent];
-
-    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
+    th.innerHTML = `${str.continents[continent]}<span class="count">${guessedCount}/${continentTotals[continent]}</span>`;
     th.dataset.continent = continent;
     tableHeader.appendChild(th);
+  }
+
+  // Pre-fill all cells in alphabetical order; hide unguessed ones
+  const maxRows = Math.max(...CONTINENTS.map(continent => continentCountries[continent].length));
+  for (let i = 0; i < maxRows; i++) {
+    const tr = tableBody.insertRow();
+
+    for (const continent of CONTINENTS) {
+      const td = tr.insertCell();
+      const country = continentCountries[continent][i];
+      if (country) {
+        td.dataset.iso2 = country.iso2;
+        td.textContent = country.name[language];
+        if (!guessed.has(country.iso2)) {
+          td.classList.add("cell-hidden");
+        }
+      }
+    }
   }
 }
 
 function updateTableHeader(language, guessed) {
   const str = STRINGS[language];
-
   for (const continent of CONTINENTS) {
     const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
     if (!th) continue;
 
-    const localeContinent = str.continents[continent];
     const guessedCount = [...guessed].filter(iso2 =>
       window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
     ).length;
-    const totalCount = continentTotals[continent];
-
-    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
+    th.innerHTML = `${str.continents[continent]}<span class="count">${guessedCount}/${continentTotals[continent]}</span>`;
   }
 }
 
-function appendToTable(iso2, isMissed = false, language) {
-  const country = window.COUNTRIES.find(x => x.iso2 === iso2);
-  if (!country) return;
-
-  const colIdx = CONTINENTS.indexOf(country.continent);
-
-  let targetRow = null;
-  for (const tr of tableBody.rows) {
-    if (!tr.cells[colIdx].textContent) {
-      targetRow = tr;
-      break;
-    }
-  }
-
-  if (!targetRow) {
-    targetRow = tableBody.insertRow();
-    for (let i = 0; i < CONTINENTS.length; i++) {
-      targetRow.insertCell();
-    }
-  }
-
-  const cell = targetRow.cells[colIdx];
-  cell.textContent = country.name[language];
+function revealInTable(iso2, isMissed = false) {
+  const cell = tableBody.querySelector(`[data-iso2="${iso2}"]`);
+  if (!cell) return;
+  cell.classList.remove("cell-hidden");
   if (isMissed) cell.classList.add("missed-cell");
 }
 
-function revealMissedInTable(guessed, language) {
+function revealMissedInTable(guessed) {
   for (const country of window.COUNTRIES) {
-    if (!guessed.has(country.iso2)) appendToTable(country.iso2, true, language);
+    if (!guessed.has(country.iso2)) revealInTable(country.iso2, true);
   }
 }
 

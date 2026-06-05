@@ -278,6 +278,11 @@ body {
 }
 #continent-table td:last-child { border-right: none; }
 
+#continent-table tbody tr:nth-child(odd)  td { background: var(--surface); }
+#continent-table tbody tr:nth-child(even) td { background: var(--bg); }
+
+#continent-table td.cell-hidden { color: transparent; }
+
 #continent-table td.missed-cell {
   color: var(--missed);
   font-style: italic;
