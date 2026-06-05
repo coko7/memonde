@@ -270,4 +270,5 @@ function toggleTheme() {
   const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
   document.documentElement.dataset.theme = next;
   document.getElementById("btn-theme").textContent = next === "dark" ? "☀️" : "🌙";
+  localStorage.setItem("theme", next);
 }

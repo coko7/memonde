@@ -179,6 +179,7 @@ function setLanguage(lang) {
   if (state.status === "running") return;
 
   state.language = lang;
+  localStorage.setItem("language", lang);
   btnEn.classList.toggle("active", lang === "en");
   btnFr.classList.toggle("active", lang === "fr");
 
@@ -215,8 +216,20 @@ document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 
 /* ── Init ── */
 (async function init() {
+  // Language: saved preference → browser locale → default 'en'
+  const savedLang = localStorage.getItem("language");
+  const lang = savedLang || (navigator.language.startsWith("fr") ? "fr" : "en");
+  state.language = lang;
+  btnEn.classList.toggle("active", lang === "en");
+  btnFr.classList.toggle("active", lang === "fr");
+
+  // Sync theme button icon with the theme applied by the inline <head> script
+  const theme = document.documentElement.dataset.theme || "light";
+  document.getElementById("btn-theme").textContent = theme === "dark" ? "☀️" : "🌙";
+
   await initMap();
-  buildTable(state.language, state.guessed);
-  inputEl.placeholder = STRINGS[state.language].inputPlaceholder;
-  btnAction.textContent = STRINGS[state.language].start;
+  buildTable(lang, state.guessed);
+  inputEl.placeholder = STRINGS[lang].inputPlaceholder;
+  scoreLabelEl.textContent = STRINGS[lang].score;
+  btnAction.textContent = STRINGS[lang].start;
 })();
