@@ -1,64 +1,3 @@
-/* ── Matching engine ── */
-
-/**
- * Normalizes a string for case-insensitive and accent-insensitive matching.
- *
- * Transformations:
- * - Converts to lowercase.
- * - Removes diacritical marks (e.g. "é" → "e").
- * - Replaces apostrophes, periods, and hyphens with spaces.
- * - Removes all remaining non-alphanumeric characters.
- * - Collapses consecutive whitespace into a single space.
- * - Trims leading and trailing whitespace.
- *
- * Example:
- *   "Jean-Luc O'Connor, Jr." -> "jean luc o connor jr"
- */
-function normalize(str) {
-  return str
-    .toLowerCase()
-    .normalize("NFD").replace(/[̀-ͯ]/g, "")
-    .replace(/[''.\-]/g, " ")
-    .replace(/[^a-z0-9 ]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Computes the Levenshtein edit distance between two strings.
- *
- * The distance is the minimum number of single-character edits
- * (insertions, deletions, or substitutions) required to transform
- * one string into the other.
- *
- * Uses a dynamic programming algorithm with O(m × n) time complexity
- * and O(n) memory usage, where m and n are the lengths of the input
- * strings.
- *
- * Examples:
- *   levenshtein("kitten", "sitting") === 3
- *   levenshtein("book", "back") === 2
- *   levenshtein("foo", "foo") === 0
- */
-function levenshtein(a, b) {
-  const m = a.length, n = b.length;
-  let prev = Array.from({ length: n + 1 }, (_, i) => i);
-
-  for (let i = 1; i <= m; i++) {
-    const curr = [i];
-
-    for (let j = 1; j <= n; j++) {
-      curr[j] = a[i - 1] === b[j - 1]
-        ? prev[j - 1]
-        : 1 + Math.min(prev[j], curr[j - 1], prev[j - 1]);
-    }
-
-    prev = curr;
-  }
-
-  return prev[n];
-}
-
 // Confusable families — members must not fuzzy-match across each other
 const CONFUSABLE_FAMILIES = [
   ["iran", "iraq"],
@@ -88,133 +27,6 @@ function inSameFamily(a, b) {
   return CONFUSABLE_FAMILIES.some(fam => fam.includes(normA) && fam.includes(normB));
 }
 
-function buildIndexes(lang) {
-  const exactIndex = new Map(); // normName → iso2
-  const fuzzyList = [];         // [{iso2, n}]
-
-  for (const country of window.COUNTRIES) {
-    const name = country.name[lang];
-    const canonicalName = normalize(name);
-    exactIndex.set(canonicalName, country.iso2);
-    fuzzyList.push({
-      iso2: country.iso2,
-      name: canonicalName,
-      display: name
-    });
-
-    const aliases = country.aliases[lang] || [];
-    for (const alias of aliases) {
-      const canonicalAlias = normalize(alias);
-      if (!exactIndex.has(canonicalAlias)) {
-        exactIndex.set(canonicalAlias, country.iso2);
-      }
-
-      fuzzyList.push({
-        iso2: country.iso2,
-        name: canonicalAlias,
-        display: name
-      });
-    }
-  }
-
-  return { exactIndex, fuzzyList };
-}
-
-function matchInput(raw, lang, indexes, guessed) {
-  if (!raw.trim()) return null;
-
-  const normalizedInput = normalize(raw);
-  const { exactIndex, fuzzyList } = indexes;
-
-  // 1. Test for Exact match
-  if (exactIndex.has(normalizedInput)) {
-    const iso2 = exactIndex.get(normalizedInput);
-    return {
-      iso2,
-      type: guessed.has(iso2) ? "duplicate" : "correct"
-    };
-  }
-
-  // 2. Test via Fuzzy match
-  const threshold = normalizedInput.length <= 6 ? 1 : 2;
-  const candidates = fuzzyList.filter(item => levenshtein(normalizedInput, item.name) <= threshold);
-
-  // Deduplicate by iso2
-  const seen = new Map();
-  for (const candidate of candidates) {
-    if (!seen.has(candidate.iso2)) {
-      seen.set(candidate.iso2, candidate);
-    }
-  }
-
-  const unique = [...seen.values()];
-
-  if (unique.length === 0) {
-    return { iso2: null, type: "nomatch" };
-  }
-
-  if (unique.length === 1) {
-    const candidate = unique[0];
-
-    // Guard: reject if input is also close to another member of the same confusable family
-    const danger = fuzzyList.some(item =>
-      item.iso2 !== candidate.iso2 &&
-      levenshtein(normalizedInput, item.name) <= threshold &&
-      inSameFamily(candidate.display, item.display)
-    );
-
-    if (danger) {
-      return { iso2: null, type: "nomatch" };
-    }
-
-    return {
-      iso2: candidate.iso2,
-      type: guessed.has(candidate.iso2) ? "duplicate" : "correct"
-    };
-  }
-
-  // Multiple candidates → reject
-  return { iso2: null, type: "nomatch" };
-}
-
-/* ── UI strings ── */
-const STRINGS = {
-  en: {
-    score: "Score",
-    start: "Start",
-    giveUp: "Give Up",
-    playAgain: "Play Again",
-    inputPlaceholder: "Type a country…",
-    alreadyGot: "already got it",
-    continents: {
-      "Africa": "Africa",
-      "Asia": "Asia",
-      "Europe": "Europe",
-      "North America": "N. America",
-      "South America": "S. America",
-      "Oceania": "Oceania",
-    },
-  },
-  fr: {
-    score: "Score",
-    start: "Démarrer",
-    giveUp: "Abandonner",
-    playAgain: "Rejouer",
-    inputPlaceholder: "Tapez un pays…",
-    alreadyGot: "déjà trouvé",
-    continents: {
-      "Africa": "Afrique",
-      "Asia": "Asie",
-      "Europe": "Europe",
-      "North America": "Amér. Nord",
-      "South America": "Amér. Sud",
-      "Oceania": "Océanie",
-    },
-  },
-};
-
-const CONTINENTS = ["Africa", "Asia", "Europe", "North America", "South America", "Oceania"];
-
 /* ── State ── */
 let state = {
   status: "idle",   // idle | running | ended
@@ -225,7 +37,6 @@ let state = {
 };
 let indexes = null;
 let timerInterval = null;
-let feedbackTimeout = null;
 
 // Per-continent country lists (derived from COUNTRIES)
 const continentCountries = {}; // continent → [country]
@@ -242,180 +53,7 @@ for (const continent of CONTINENTS) {
   continentTotals[continent] = continentCountries[continent].length;
 }
 
-/* ── DOM refs ── */
-const timerEl = document.getElementById("timer-display");
-const scoreEl = document.getElementById("score-value");
-const scoreLabelEl = document.getElementById("score-label");
-const inputEl = document.getElementById("country-input");
-const feedbackEl = document.getElementById("feedback");
-const btnAction = document.getElementById("btn-action");
-const btnEn = document.getElementById("btn-en");
-const btnFr = document.getElementById("btn-fr");
-const tableHeader = document.getElementById("table-header");
-const tableBody = document.getElementById("table-body");
-
-/* ── Map ── */
-let pathByNumeric = {};
-
-async function initMap() {
-  const world = await d3.json(
-    "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
-  );
-  const countries110m = topojson.feature(world, world.objects.countries);
-  const svgEl = document.getElementById("world-map");
-  const width = svgEl.clientWidth;
-  const height = svgEl.clientHeight;
-
-  const projection = d3.geoNaturalEarth1()
-    .fitSize([width, height], countries110m);
-  const path = d3.geoPath().projection(projection);
-
-  const svg = d3.select("#world-map")
-    .attr("viewBox", `0 0 ${width} ${height}`)
-    .attr("preserveAspectRatio", "xMidYMid meet");
-
-  // Ocean background — stays outside the zoom group so it always fills
-  svg.append("rect")
-    .attr("id", "ocean-bg")
-    .attr("width", width).attr("height", height);
-
-  // All country paths live in a group that receives the zoom transform
-  const mapGroup = svg.append("g").attr("id", "map-group");
-
-  // Build numeric → iso2 lookup
-  const numericToIso2 = {};
-  for (const country of window.COUNTRIES) {
-    numericToIso2[country.numeric] = country.iso2;
-  }
-
-  mapGroup.selectAll("path")
-    .data(countries110m.features)
-    .enter().append("path")
-    .attr("d", path)
-    .attr("data-numeric", d => d.id)
-    .each(function (d) {
-      const iso2 = numericToIso2[+d.id];
-      if (iso2) {
-        this.dataset.iso2 = iso2;
-        this.classList.add("in-set");
-        pathByNumeric[+d.id] = this;
-      }
-    });
-
-  // Zoom behaviour
-  const zoom = d3.zoom()
-    .scaleExtent([1, 10])
-    .translateExtent([[0, 0], [width, height]])
-    .on("zoom", event => {
-      mapGroup.attr("transform", event.transform);
-    });
-
-  svg.call(zoom);
-
-  // Double-click resets to initial view instead of zooming in
-  svg.on("dblclick.zoom", () => {
-    svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
-  });
-}
-
-function highlightCountry(iso2, cls) {
-  const country = window.COUNTRIES.find(x => x.iso2 === iso2);
-  if (!country) return;
-
-  const el = pathByNumeric[country.numeric];
-  if (el) el.classList.add(cls);
-}
-
-function revealMissed() {
-  for (const country of window.COUNTRIES) {
-    if (!state.guessed.has(country.iso2)) {
-      highlightCountry(country.iso2, "missed");
-    }
-  }
-}
-
-/* ── Table ── */
-function buildTable() {
-  const lang = state.language;
-  const str = STRINGS[lang];
-  tableHeader.innerHTML = "";
-  tableBody.innerHTML = "";
-
-  for (const continent of CONTINENTS) {
-    const th = document.createElement("th");
-
-    const localeContinent = str.continents[continent];
-    const guessedCount = [...state.guessed].filter(iso2 =>
-      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
-    ).length;
-    const totalCount = continentTotals[continent];
-
-    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
-    th.dataset.continent = continent;
-    tableHeader.appendChild(th);
-  }
-}
-
-function updateTableHeader() {
-  const lang = state.language;
-  const str = STRINGS[lang];
-
-  for (const continent of CONTINENTS) {
-    const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
-    if (!th) continue;
-
-    const localeContinent = str.continents[continent];
-    const guessedCount = [...state.guessed].filter(iso2 =>
-      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
-    ).length;
-    const totalCount = continentTotals[continent];
-
-    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
-  }
-}
-
-function appendToTable(iso2, isMissed = false) {
-  const country = window.COUNTRIES.find(x => x.iso2 === iso2);
-  if (!country) return;
-
-  const lang = state.language;
-  const colIdx = CONTINENTS.indexOf(country.continent);
-
-  // Find the first row where this column's cell is empty, or create a new one
-  let targetRow = null;
-  for (const tr of tableBody.rows) {
-    if (!tr.cells[colIdx].textContent) {
-      targetRow = tr;
-      break;
-    }
-  }
-
-  if (!targetRow) {
-    targetRow = tableBody.insertRow();
-    for (let i = 0; i < CONTINENTS.length; i++) {
-      targetRow.insertCell();
-    }
-  }
-
-  const cell = targetRow.cells[colIdx];
-  cell.textContent = country.name[lang];
-  if (isMissed) cell.classList.add("missed-cell");
-}
-
-function revealMissedInTable() {
-  for (const country of window.COUNTRIES) {
-    if (!state.guessed.has(country.iso2)) appendToTable(country.iso2, true);
-  }
-}
-
 /* ── Timer ── */
-function formatTime(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const m = Math.floor(total / 60).toString().padStart(2, "0");
-  const s = (total % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
-}
-
 function tickTimer() {
   const remaining = state.endTime - Date.now();
   timerEl.textContent = formatTime(remaining);
@@ -438,7 +76,7 @@ function startGame() {
   });
 
   // Reset table
-  buildTable();
+  buildTable(state.language, state.guessed);
   tableBody.innerHTML = "";
 
   // UI
@@ -471,8 +109,8 @@ function endGame() {
   btnEn.disabled = false;
   btnFr.disabled = false;
 
-  revealMissed();
-  revealMissedInTable();
+  revealMissed(state.guessed);
+  revealMissedInTable(state.guessed, state.language);
 }
 
 function resetToIdle() {
@@ -497,25 +135,8 @@ function resetToIdle() {
     el.classList.remove("guessed", "missed");
   });
 
-  buildTable();
+  buildTable(state.language, state.guessed);
   tableBody.innerHTML = "";
-}
-
-/* ── Feedback ── */
-function showFeedback(text, type) {
-  clearTimeout(feedbackTimeout);
-
-  feedbackEl.textContent = text;
-  feedbackEl.className = `visible ${type}`;
-  inputEl.classList.remove("flash-correct", "flash-wrong");
-  void inputEl.offsetWidth; // reflow
-
-  if (type === "correct") inputEl.classList.add("flash-correct");
-  else if (type === "wrong") inputEl.classList.add("flash-wrong");
-
-  feedbackTimeout = setTimeout(() => {
-    feedbackEl.className = "";
-  }, 1500);
 }
 
 /* ── Submit handler ── */
@@ -545,8 +166,8 @@ function handleSubmit() {
 
   showFeedback("✓", "correct");
   highlightCountry(result.iso2, "guessed");
-  appendToTable(result.iso2);
-  updateTableHeader();
+  appendToTable(result.iso2, false, state.language);
+  updateTableHeader(state.language, state.guessed);
 
   if (state.score === 197) endGame();
 }
@@ -564,22 +185,14 @@ function setLanguage(lang) {
 
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
-    buildTable();
+    buildTable(state.language, state.guessed);
   } else if (state.status === "ended") {
     btnAction.textContent = STRINGS[lang].playAgain;
-    // Rebuild table with correct language names
-    buildTable();
+    buildTable(state.language, state.guessed);
     tableBody.innerHTML = "";
-    for (const iso2 of state.guessed) appendToTable(iso2);
-    revealMissedInTable();
+    for (const iso2 of state.guessed) appendToTable(iso2, false, state.language);
+    revealMissedInTable(state.guessed, state.language);
   }
-}
-
-/* ── Theme toggle ── */
-function toggleTheme() {
-  const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-  document.documentElement.dataset.theme = next;
-  document.getElementById("btn-theme").textContent = next === "dark" ? "☀️" : "🌙";
 }
 
 /* ── Event wiring ── */
@@ -601,7 +214,7 @@ document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 /* ── Init ── */
 (async function init() {
   await initMap();
-  buildTable();
+  buildTable(state.language, state.guessed);
   inputEl.placeholder = STRINGS[state.language].inputPlaceholder;
   btnAction.textContent = STRINGS[state.language].start;
 })();
