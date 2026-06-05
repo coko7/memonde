@@ -3,14 +3,36 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>World Countries Guessr</title>
+    <title>Memonde</title>
+
+    <!-- Primary -->
+    <meta name="description" content="A geography guessing game — name all 197 countries of the world in 15 minutes." />
+    <meta name="author" content="Coko" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)"  content="#1e1e2e" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#eff1f5" />
+
+    <!-- Open Graph -->
+    <meta property="og:type"        content="website" />
+    <meta property="og:title"       content="Memonde" />
+    <meta property="og:description" content="A geography guessing game — name all 197 countries of the world in 15 minutes." />
+    <meta property="og:image"       content="https://github.com/user-attachments/assets/08c06dc6-29f4-4f1b-ab16-a1c915df5eb1" />
+    <meta property="og:image:width"  content="1280" />
+    <meta property="og:image:height" content="640" />
+    <!-- <meta property="og:url" content="https://your-domain/memonde" /> -->
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card"        content="summary_large_image" />
+    <meta name="twitter:title"       content="Memonde" />
+    <meta name="twitter:description" content="A geography guessing game — name all 197 countries of the world in 15 minutes." />
+    <meta name="twitter:image"       content="https://github.com/user-attachments/assets/08c06dc6-29f4-4f1b-ab16-a1c915df5eb1" />
+
     <!-- Apply theme before CSS renders to avoid flash -->
     <script>
-      (function () {
-        const saved = localStorage.getItem('theme');
-        const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-        document.documentElement.dataset.theme = theme;
-      })();
+    (function () {
+      const saved = localStorage.getItem('theme');
+      const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.dataset.theme = theme;
+    })();
     </script>
     <link rel="stylesheet" href="styles.css" />
   </head>
