@@ -56,6 +56,7 @@ const ALIASES = {
   FM: { en: ["Micronesia"], fr: ["Micronésie"] },
   GB: { en: ["UK", "U.K.", "Britain", "Great Britain", "England", "United Kingdom"], fr: ["UK", "Angleterre", "Grande-Bretagne", "Royaume Uni"] },
   GD: { en: ["Grenada"], fr: ["Grenade"] },
+  GM: { en: ["Gambia"], fr: ["Gambie"] },
   IR: { en: ["Iran"], fr: [] },
   KI: { en: ["Kiribati"], fr: [] },
   KN: { en: ["Saint Kitts", "St Kitts and Nevis"], fr: ["Saint-Christophe-et-Niévès"] },

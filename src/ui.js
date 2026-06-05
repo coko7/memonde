@@ -54,6 +54,7 @@ let dotByIso2 = {};
 let feedbackTimeout = null;
 
 // [lon, lat] centroids for countries too small to see at 110m resolution
+// TODO: Avoid hardcoding stuff, it would be better to get this data from the dataset
 const MICRO_DOTS = {
   // European micro-states
   VA: [12.453, 41.903], MC: [7.425, 43.738], SM: [12.458, 43.942],
