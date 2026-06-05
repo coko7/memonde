@@ -10,7 +10,7 @@
 > Using AI to take me from 0 to 1 very quickly allows me to gain some momentum so that I can get the project from 1 to 100 on my own.
 >
 > I am still experimenting with this approach but so far I don't dislike it.
-> This allows me to tackle projects that I would have otherwise avoided due to lack of time or will ([Writer's block](https://en.wikipedia.org/wiki/Writer%27s_block)).
+> This allows me to tackle projects that I would have otherwise avoided due to lack of time or motivation ([Writer's block](https://en.wikipedia.org/wiki/Writer%27s_block)).
 
 <img width="1280" height="640" alt="banner" src="https://github.com/user-attachments/assets/08c06dc6-29f4-4f1b-ab16-a1c915df5eb1" />
 
