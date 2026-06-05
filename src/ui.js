@@ -3,6 +3,8 @@ const STRINGS = {
   en: {
     score: "Score",
     start: "Start",
+    share: "Share",
+    copied: "Copied",
     giveUp: "Give Up",
     playAgain: "Play Again",
     inputPlaceholder: "Type a country…",
@@ -19,6 +21,8 @@ const STRINGS = {
   fr: {
     score: "Score",
     start: "Démarrer",
+    share: "Partager",
+    copied: "Copié",
     giveUp: "Abandonner",
     playAgain: "Rejouer",
     inputPlaceholder: "Tapez un pays…",
@@ -47,6 +51,7 @@ const btnEn = document.getElementById("btn-en");
 const btnFr = document.getElementById("btn-fr");
 const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
+const btnShare = document.getElementById("btn-share");
 
 /* ── Map ── */
 let pathByNumeric = {};

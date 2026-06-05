@@ -232,6 +232,21 @@ body {
 #btn-action:active { transform: scale(0.97); }
 #btn-action.danger { background: var(--missed); color: var(--on-missed); }
 
+#btn-share {
+  padding: 0.55rem 1.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, transform 0.1s;
+}
+#btn-share:hover  { background: var(--accent-glow); }
+#btn-share:active { transform: scale(0.97); }
+
 /* ── Continent table ── */
 #table-wrap {
   overflow-x: auto;

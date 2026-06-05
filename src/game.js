@@ -39,6 +39,7 @@ let state = {
 };
 let indexes = null;
 let timerInterval = null;
+let shareTimeoutId = null;
 
 // Per-continent country lists (derived from COUNTRIES)
 const continentCountries = {}; // continent → [country]
@@ -111,6 +112,7 @@ function endGame() {
 
   revealMissed(state.guessed);
   revealMissedInTable(state.guessed);
+  btnShare.hidden = false;
 }
 
 function resetToIdle() {
@@ -129,6 +131,7 @@ function resetToIdle() {
   btnAction.classList.remove("danger");
   btnEn.disabled = false;
   btnFr.disabled = false;
+  btnShare.hidden = true;
 
   // Reset map
   document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
@@ -182,6 +185,8 @@ function setLanguage(lang) {
 
   scoreLabelEl.textContent = STRINGS[lang].score;
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
+  btnShare.textContent = STRINGS[lang].share;
+  clearTimeout(shareTimeoutId);
 
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
@@ -190,6 +195,39 @@ function setLanguage(lang) {
     btnAction.textContent = STRINGS[lang].playAgain;
     buildTable(state.language, state.guessed);
     revealMissedInTable(state.guessed);
+  }
+}
+
+/* ── Share ── */
+async function shareScore() {
+  clearTimeout(shareTimeoutId);
+
+  const lang = state.language;
+  const lines = [`🌍 Memonde — ${state.score} / 197`, ''];
+
+  for (const continent of CONTINENTS) {
+    const count = [...state.guessed].filter(
+      iso2 => window.COUNTRIES.find(country => country.iso2 === iso2)?.continent === continent
+    ).length;
+    lines.push(`- ${STRINGS[lang].continents[continent]}: ${count} / ${continentTotals[continent]}`);
+  }
+
+  const text = lines.join("\n");
+  const url = window.location.href;
+
+  try {
+    if (navigator.share && navigator.canShare?.({ title: "Memonde", text, url })) {
+      await navigator.share({ title: "Memonde", text, url });
+    } else {
+      await navigator.clipboard.writeText(`${text}\n${url}`);
+      btnShare.textContent = `✓ ${STRINGS[lang].copied}`;
+      shareTimeoutId = setTimeout(() => {
+        const lang = state.language;
+        btnShare.textContent = STRINGS[lang].share;
+      }, 2000);
+    }
+  } catch {
+    // user cancelled or clipboard unavailable — silently ignore
   }
 }
 
@@ -208,6 +246,7 @@ btnEn.addEventListener("click", () => setLanguage("en"));
 btnFr.addEventListener("click", () => setLanguage("fr"));
 
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
+btnShare.addEventListener("click", shareScore);
 
 /* ── Init ── */
 (async function init() {
@@ -227,4 +266,5 @@ document.getElementById("btn-theme").addEventListener("click", toggleTheme);
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
   scoreLabelEl.textContent = STRINGS[lang].score;
   btnAction.textContent = STRINGS[lang].start;
+  btnShare.textContent = STRINGS[lang].share;
 })();
