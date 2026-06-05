@@ -1,7 +1,21 @@
 /* ── Matching engine ── */
 
-function norm(s) {
-  return s
+/**
+ * Normalizes a string for case-insensitive and accent-insensitive matching.
+ *
+ * Transformations:
+ * - Converts to lowercase.
+ * - Removes diacritical marks (e.g. "é" → "e").
+ * - Replaces apostrophes, periods, and hyphens with spaces.
+ * - Removes all remaining non-alphanumeric characters.
+ * - Collapses consecutive whitespace into a single space.
+ * - Trims leading and trailing whitespace.
+ *
+ * Example:
+ *   "Jean-Luc O'Connor, Jr." -> "jean luc o connor jr"
+ */
+function normalize(str) {
+  return str
     .toLowerCase()
     .normalize("NFD").replace(/[̀-ͯ]/g, "")
     .replace(/[''.\-]/g, " ")
@@ -10,18 +24,38 @@ function norm(s) {
     .trim();
 }
 
+/**
+ * Computes the Levenshtein edit distance between two strings.
+ *
+ * The distance is the minimum number of single-character edits
+ * (insertions, deletions, or substitutions) required to transform
+ * one string into the other.
+ *
+ * Uses a dynamic programming algorithm with O(m × n) time complexity
+ * and O(n) memory usage, where m and n are the lengths of the input
+ * strings.
+ *
+ * Examples:
+ *   levenshtein("kitten", "sitting") === 3
+ *   levenshtein("book", "back") === 2
+ *   levenshtein("foo", "foo") === 0
+ */
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
   let prev = Array.from({ length: n + 1 }, (_, i) => i);
+
   for (let i = 1; i <= m; i++) {
     const curr = [i];
+
     for (let j = 1; j <= n; j++) {
       curr[j] = a[i - 1] === b[j - 1]
         ? prev[j - 1]
         : 1 + Math.min(prev[j], curr[j - 1], prev[j - 1]);
     }
+
     prev = curr;
   }
+
   return prev[n];
 }
 
@@ -47,65 +81,96 @@ const CONFUSABLE_FAMILIES = [
   ["republique du congo", "republique democratique du congo"],
   ["coree du nord", "coree du sud"],
   ["guinee", "guinee bissau", "guinee equatoriale", "papouasie nouvelle guinee"],
-].map(family => family.map(norm));
+].map(family => family.map(normalize));
 
 function inSameFamily(a, b) {
-  const na = norm(a), nb = norm(b);
-  return CONFUSABLE_FAMILIES.some(fam => fam.includes(na) && fam.includes(nb));
+  const normA = normalize(a), normB = normalize(b);
+  return CONFUSABLE_FAMILIES.some(fam => fam.includes(normA) && fam.includes(normB));
 }
 
 function buildIndexes(lang) {
   const exactIndex = new Map(); // normName → iso2
   const fuzzyList = [];         // [{iso2, n}]
 
-  for (const c of window.COUNTRIES) {
-    const canonical = norm(c.name[lang]);
-    exactIndex.set(canonical, c.iso2);
-    fuzzyList.push({ iso2: c.iso2, n: canonical, display: c.name[lang] });
+  for (const country of window.COUNTRIES) {
+    const name = country.name[lang];
+    const canonicalName = normalize(name);
+    exactIndex.set(canonicalName, country.iso2);
+    fuzzyList.push({
+      iso2: country.iso2,
+      name: canonicalName,
+      display: name
+    });
 
-    for (const alias of (c.aliases[lang] || [])) {
-      const na = norm(alias);
-      if (!exactIndex.has(na)) exactIndex.set(na, c.iso2);
-      fuzzyList.push({ iso2: c.iso2, n: na, display: c.name[lang] });
+    const aliases = country.aliases[lang] || [];
+    for (const alias of aliases) {
+      const canonicalAlias = normalize(alias);
+      if (!exactIndex.has(canonicalAlias)) {
+        exactIndex.set(canonicalAlias, country.iso2);
+      }
+
+      fuzzyList.push({
+        iso2: country.iso2,
+        name: canonicalAlias,
+        display: name
+      });
     }
   }
+
   return { exactIndex, fuzzyList };
 }
 
 function matchInput(raw, lang, indexes, guessed) {
   if (!raw.trim()) return null;
-  const n = norm(raw);
+
+  const normalizedInput = normalize(raw);
   const { exactIndex, fuzzyList } = indexes;
 
-  // 1. Exact
-  if (exactIndex.has(n)) {
-    const iso2 = exactIndex.get(n);
-    return { iso2, type: guessed.has(iso2) ? "duplicate" : "correct" };
+  // 1. Test for Exact match
+  if (exactIndex.has(normalizedInput)) {
+    const iso2 = exactIndex.get(normalizedInput);
+    return {
+      iso2,
+      type: guessed.has(iso2) ? "duplicate" : "correct"
+    };
   }
 
-  // 2. Fuzzy
-  const threshold = n.length <= 6 ? 1 : 2;
-  const candidates = fuzzyList.filter(item => levenshtein(n, item.n) <= threshold);
+  // 2. Test via Fuzzy match
+  const threshold = normalizedInput.length <= 6 ? 1 : 2;
+  const candidates = fuzzyList.filter(item => levenshtein(normalizedInput, item.name) <= threshold);
 
   // Deduplicate by iso2
   const seen = new Map();
-  for (const c of candidates) {
-    if (!seen.has(c.iso2)) seen.set(c.iso2, c);
+  for (const candidate of candidates) {
+    if (!seen.has(candidate.iso2)) {
+      seen.set(candidate.iso2, candidate);
+    }
   }
+
   const unique = [...seen.values()];
 
-  if (unique.length === 0) return { iso2: null, type: "nomatch" };
+  if (unique.length === 0) {
+    return { iso2: null, type: "nomatch" };
+  }
 
   if (unique.length === 1) {
     const candidate = unique[0];
+
     // Guard: reject if input is also close to another member of the same confusable family
     const danger = fuzzyList.some(item =>
       item.iso2 !== candidate.iso2 &&
-      levenshtein(n, item.n) <= threshold &&
+      levenshtein(normalizedInput, item.name) <= threshold &&
       inSameFamily(candidate.display, item.display)
     );
-    if (danger) return { iso2: null, type: "nomatch" };
-    return { iso2: candidate.iso2, type: guessed.has(candidate.iso2) ? "duplicate" : "correct" };
+
+    if (danger) {
+      return { iso2: null, type: "nomatch" };
+    }
+
+    return {
+      iso2: candidate.iso2,
+      type: guessed.has(candidate.iso2) ? "duplicate" : "correct"
+    };
   }
 
   // Multiple candidates → reject
@@ -164,14 +229,18 @@ let feedbackTimeout = null;
 
 // Per-continent country lists (derived from COUNTRIES)
 const continentCountries = {}; // continent → [country]
-for (const cont of CONTINENTS) continentCountries[cont] = [];
-for (const c of window.COUNTRIES) continentCountries[c.continent].push(c);
+for (const continent of CONTINENTS) continentCountries[continent] = [];
+for (const country of window.COUNTRIES) continentCountries[country.continent].push(country);
+
 // Sort alphabetically for stable display
-for (const cont of CONTINENTS)
-  continentCountries[cont].sort((a, b) => a.name.en.localeCompare(b.name.en));
+for (const continent of CONTINENTS) {
+  continentCountries[continent].sort((a, b) => a.name.en.localeCompare(b.name.en));
+}
 
 const continentTotals = {}; // continent → total
-for (const cont of CONTINENTS) continentTotals[cont] = continentCountries[cont].length;
+for (const continent of CONTINENTS) {
+  continentTotals[continent] = continentCountries[continent].length;
+}
 
 /* ── DOM refs ── */
 const timerEl = document.getElementById("timer-display");
@@ -215,7 +284,9 @@ async function initMap() {
 
   // Build numeric → iso2 lookup
   const numericToIso2 = {};
-  for (const c of window.COUNTRIES) numericToIso2[c.numeric] = c.iso2;
+  for (const country of window.COUNTRIES) {
+    numericToIso2[country.numeric] = country.iso2;
+  }
 
   mapGroup.selectAll("path")
     .data(countries110m.features)
@@ -248,15 +319,18 @@ async function initMap() {
 }
 
 function highlightCountry(iso2, cls) {
-  const c = window.COUNTRIES.find(x => x.iso2 === iso2);
-  if (!c) return;
-  const el = pathByNumeric[c.numeric];
+  const country = window.COUNTRIES.find(x => x.iso2 === iso2);
+  if (!country) return;
+
+  const el = pathByNumeric[country.numeric];
   if (el) el.classList.add(cls);
 }
 
 function revealMissed() {
-  for (const c of window.COUNTRIES) {
-    if (!state.guessed.has(c.iso2)) highlightCountry(c.iso2, "missed");
+  for (const country of window.COUNTRIES) {
+    if (!state.guessed.has(country.iso2)) {
+      highlightCountry(country.iso2, "missed");
+    }
   }
 }
 
@@ -267,13 +341,17 @@ function buildTable() {
   tableHeader.innerHTML = "";
   tableBody.innerHTML = "";
 
-  for (const cont of CONTINENTS) {
+  for (const continent of CONTINENTS) {
     const th = document.createElement("th");
+
+    const localeContinent = str.continents[continent];
     const guessedCount = [...state.guessed].filter(iso2 =>
-      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === cont
+      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
     ).length;
-    th.innerHTML = `${str.continents[cont]}<span class="count">${guessedCount}/${continentTotals[cont]}</span>`;
-    th.dataset.continent = cont;
+    const totalCount = continentTotals[continent];
+
+    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
+    th.dataset.continent = continent;
     tableHeader.appendChild(th);
   }
 }
@@ -281,40 +359,52 @@ function buildTable() {
 function updateTableHeader() {
   const lang = state.language;
   const str = STRINGS[lang];
-  for (const cont of CONTINENTS) {
-    const th = tableHeader.querySelector(`[data-continent="${cont}"]`);
+
+  for (const continent of CONTINENTS) {
+    const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
     if (!th) continue;
+
+    const localeContinent = str.continents[continent];
     const guessedCount = [...state.guessed].filter(iso2 =>
-      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === cont
+      window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
     ).length;
-    th.innerHTML = `${str.continents[cont]}<span class="count">${guessedCount}/${continentTotals[cont]}</span>`;
+    const totalCount = continentTotals[continent];
+
+    th.innerHTML = `${localeContinent}<span class="count">${guessedCount}/${totalCount}</span>`;
   }
 }
 
 function appendToTable(iso2, isMissed = false) {
-  const c = window.COUNTRIES.find(x => x.iso2 === iso2);
-  if (!c) return;
+  const country = window.COUNTRIES.find(x => x.iso2 === iso2);
+  if (!country) return;
+
   const lang = state.language;
-  const colIdx = CONTINENTS.indexOf(c.continent);
+  const colIdx = CONTINENTS.indexOf(country.continent);
 
   // Find the first row where this column's cell is empty, or create a new one
   let targetRow = null;
   for (const tr of tableBody.rows) {
-    if (!tr.cells[colIdx].textContent) { targetRow = tr; break; }
+    if (!tr.cells[colIdx].textContent) {
+      targetRow = tr;
+      break;
+    }
   }
+
   if (!targetRow) {
     targetRow = tableBody.insertRow();
-    for (let i = 0; i < CONTINENTS.length; i++) targetRow.insertCell();
+    for (let i = 0; i < CONTINENTS.length; i++) {
+      targetRow.insertCell();
+    }
   }
 
   const cell = targetRow.cells[colIdx];
-  cell.textContent = c.name[lang];
+  cell.textContent = country.name[lang];
   if (isMissed) cell.classList.add("missed-cell");
 }
 
 function revealMissedInTable() {
-  for (const c of window.COUNTRIES) {
-    if (!state.guessed.has(c.iso2)) appendToTable(c.iso2, true);
+  for (const country of window.COUNTRIES) {
+    if (!state.guessed.has(country.iso2)) appendToTable(country.iso2, true);
   }
 }
 
@@ -414,12 +504,15 @@ function resetToIdle() {
 /* ── Feedback ── */
 function showFeedback(text, type) {
   clearTimeout(feedbackTimeout);
+
   feedbackEl.textContent = text;
   feedbackEl.className = `visible ${type}`;
   inputEl.classList.remove("flash-correct", "flash-wrong");
   void inputEl.offsetWidth; // reflow
+
   if (type === "correct") inputEl.classList.add("flash-correct");
   else if (type === "wrong") inputEl.classList.add("flash-wrong");
+
   feedbackTimeout = setTimeout(() => {
     feedbackEl.className = "";
   }, 1500);
@@ -428,6 +521,7 @@ function showFeedback(text, type) {
 /* ── Submit handler ── */
 function handleSubmit() {
   if (state.status !== "running") return;
+
   const raw = inputEl.value;
   if (!raw.trim()) return;
 
@@ -448,6 +542,7 @@ function handleSubmit() {
   state.score++;
   scoreEl.textContent = state.score;
   inputEl.value = "";
+
   showFeedback("✓", "correct");
   highlightCountry(result.iso2, "guessed");
   appendToTable(result.iso2);
@@ -459,11 +554,14 @@ function handleSubmit() {
 /* ── Language toggle ── */
 function setLanguage(lang) {
   if (state.status === "running") return;
+
   state.language = lang;
   btnEn.classList.toggle("active", lang === "en");
   btnFr.classList.toggle("active", lang === "fr");
+
   scoreLabelEl.textContent = STRINGS[lang].score;
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
+
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
     buildTable();

@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const raw = JSON.parse(fs.readFileSync(path.join(__dirname, "../data/countries.json"), "utf8"));
 
+// Here we define all the territories we want to include as individual countries in the output data
 const INCLUDE = new Set([
   // Africa (54)
   "DZ", "AO", "BJ", "BW", "BF", "BI", "CV", "CM", "CF", "TD", "KM", "CD", "CG", "CI", "DJ", "EG",
@@ -29,12 +30,14 @@ const INCLUDE = new Set([
   "AU", "FJ", "KI", "MH", "FM", "NR", "NZ", "PW", "PG", "WS", "SB", "TO", "TV", "VU",
 ]);
 
+// To fix some typos in the original JSON dataset, we define custom overrides for some entries
 const OVERRIDES = {
   VA: { en: "Vatican City", fr: "Cité du Vatican" },
   XK: { fr: "Kosovo" },
   PS: { en: "Palestine" },
 };
 
+// Aliases will be used to make the user experience more enjoyable
 const ALIASES = {
   AE: { en: ["UAE", "United Arab Emirates"], fr: ["Émirats arabes unis", "EAU"] },
   AG: { en: ["Antigua"], fr: [] },
@@ -82,36 +85,44 @@ const ALIASES = {
 };
 
 function continentOf(c) {
+  // Because "South America" and "North America" are not regions but subregions
   if (c.region === "Americas")
     return c.subregion === "South America" ? "South America" : "North America";
   return c.region;
 }
 
+// Build output data
 const out = raw
-  .filter(c => INCLUDE.has(c.iso2))
-  .map(c => {
-    const o = OVERRIDES[c.iso2] || {};
+  .filter(country => INCLUDE.has(country.iso2))
+  .map(country => {
+    // If the country has an override, we use it:
+    const override = OVERRIDES[country.iso2] || {};
     return {
-      iso2: c.iso2,
-      numeric: parseInt(c.numeric_code, 10),
-      continent: continentOf(c),
+      iso2: country.iso2,
+      numeric: parseInt(country.numeric_code, 10),
+      continent: continentOf(country),
       name: {
-        en: o.en ?? c.name,
-        fr: o.fr ?? (c.translations?.fr || c.name),
+        en: override.en ?? country.name,
+        fr: override.fr ?? (country.translations?.fr || country.name),
       },
-      aliases: ALIASES[c.iso2] || { en: [], fr: [] },
+      aliases: ALIASES[country.iso2] || { en: [], fr: [] },
     };
   });
 
+// Validate output data before writing
 if (out.length !== 197) throw new Error(`Expected 197, got ${out.length}`);
-for (const c of out) {
-  if (!c.name.en) throw new Error(`Missing EN name for ${c.iso2}`);
-  if (!c.name.fr) throw new Error(`Missing FR name for ${c.iso2}`);
+for (const country of out) {
+  if (!country.name.en) throw new Error(`Missing EN name for ${country.iso2}`);
+  if (!country.name.fr) throw new Error(`Missing FR name for ${country.iso2}`);
 }
 
-// Continent counts
+// Compute number of countries per continent
 const counts = {};
-for (const c of out) counts[c.continent] = (counts[c.continent] || 0) + 1;
+for (const country of out) {
+  const continent = country.continent;
+  counts[continent] = (counts[continent] || 0) + 1;
+}
+
 console.log("Continent counts:", counts);
 console.log("Total:", out.length);
 
