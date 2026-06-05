@@ -36,28 +36,25 @@
   --on-missed: #fff;
   --text: #4c4f69;
   --text-dim: #6c6f85;
-  --country-default: #ccd0da;
-  --country-hover: #bcc0cc;
-  --country-guessed: #40a02b;
-  --country-missed: #d20f39;
-  --country-stroke: #eff1f5;
-  --ocean: #89dceb;
+  --country-default: #ffff80;
+  --country-hover: green;
+  --country-guessed: #66ff66;
+  --country-missed: #ff6666;
+  --country-stroke: black;
+  --ocean: #64beff;
 }
 
 body {
   font-family: 'Segoe UI', system-ui, sans-serif;
   background: var(--bg);
   color: var(--text);
-  height: 100dvh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
 }
 
 #app {
   display: flex;
   flex-direction: column;
-  height: 100%;
 }
 
 /* ── Top bar ── */
@@ -138,12 +135,11 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4rem;
 }
 
 #world-map {
   width: 100%;
-  height: 100%;
+  height: 500px;
   cursor: grab;
 }
 #world-map:active { cursor: grabbing; }
@@ -237,7 +233,6 @@ body {
 #table-wrap {
   overflow-x: auto;
   overflow-y: auto;
-  max-height: 30vh;
   background: var(--surface);
   border-top: 1px solid var(--border);
   flex-shrink: 0;
