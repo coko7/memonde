@@ -148,16 +148,17 @@ body {
 
 #ocean-bg { fill: var(--ocean); }
 
-#world-map path {
+#world-map path,
+#world-map circle.dot-marker {
   fill: var(--country-default);
   stroke: var(--country-stroke);
   stroke-width: 0.4px;
   cursor: default;
   transition: fill 0.25s;
 }
-#world-map path.in-set:hover { fill: var(--country-hover); }
-#world-map path.guessed { fill: var(--country-guessed); }
-#world-map path.missed  { fill: var(--country-missed); }
+#world-map .in-set:hover { fill: var(--country-hover) !important; }
+#world-map .guessed { fill: var(--country-guessed) !important; }
+#world-map .missed  { fill: var(--country-missed) !important; }
 
 /* ── Input row ── */
 #input-row {

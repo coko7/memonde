@@ -71,7 +71,7 @@ function startGame() {
   indexes = buildIndexes(state.language);
 
   // Reset map
-  document.querySelectorAll("#world-map path").forEach(el => {
+  document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
     el.classList.remove("guessed", "missed");
   });
 
@@ -131,7 +131,7 @@ function resetToIdle() {
   btnFr.disabled = false;
 
   // Reset map
-  document.querySelectorAll("#world-map path").forEach(el => {
+  document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
     el.classList.remove("guessed", "missed");
   });
 

@@ -50,7 +50,28 @@ const tableBody = document.getElementById("table-body");
 
 /* ── Map ── */
 let pathByNumeric = {};
+let dotByIso2 = {};
 let feedbackTimeout = null;
+
+// [lon, lat] centroids for countries too small to see at 110m resolution
+const MICRO_DOTS = {
+  // European micro-states
+  VA: [12.453, 41.903], MC: [7.425, 43.738], SM: [12.458, 43.942],
+  LI: [9.555, 47.141], AD: [1.602, 42.547], MT: [14.438, 35.938],
+  // Caribbean
+  AG: [-61.796, 17.075], BB: [-59.543, 13.194], DM: [-61.371, 15.415],
+  GD: [-61.679, 12.117], KN: [-62.783, 17.358], LC: [-60.979, 13.909],
+  VC: [-61.197, 13.253], TT: [-61.223, 10.692],
+  // Middle East / Asia
+  BH: [50.558, 26.028], SG: [103.820, 1.352], MV: [73.221, 3.203],
+  // Pacific
+  NR: [166.931, -0.523], TV: [177.649, -7.110], PW: [134.583, 7.515],
+  MH: [171.185, 7.131], KI: [172.972, 1.452], FM: [158.215, 6.888],
+  WS: [-172.105, -13.759], TO: [-175.198, -21.179],
+  // Small African islands
+  CV: [-23.042, 16.539], ST: [6.613, 0.186], KM: [43.333, -11.645],
+  SC: [55.492, -4.680], MU: [57.552, -20.348],
+};
 
 async function initMap() {
   const world = await d3.json(
@@ -97,6 +118,22 @@ async function initMap() {
       }
     });
 
+  // Dot markers for countries too small to have a visible path
+  for (const [iso2, [lon, lat]] of Object.entries(MICRO_DOTS)) {
+    const country = window.COUNTRIES.find(c => c.iso2 === iso2);
+    if (!country) continue;
+
+    const [x, y] = projection([lon, lat]);
+    const node = mapGroup.append("circle")
+      .attr("class", "dot-marker in-set")
+      .attr("data-iso2", iso2)
+      .attr("cx", x).attr("cy", y)
+      .attr("r", 0.5)
+      .node();
+
+    dotByIso2[iso2] = node;
+  }
+
   // Zoom behaviour
   const zoom = d3.zoom()
     .scaleExtent([1, 10])
@@ -117,8 +154,11 @@ function highlightCountry(iso2, cls) {
   const country = window.COUNTRIES.find(x => x.iso2 === iso2);
   if (!country) return;
 
-  const el = pathByNumeric[country.numeric];
-  if (el) el.classList.add(cls);
+  const path = pathByNumeric[country.numeric];
+  const dot = dotByIso2[iso2];
+
+  if (path) path.classList.add(cls);
+  if (dot) dot.classList.add(cls);
 }
 
 function revealMissed(guessed) {
