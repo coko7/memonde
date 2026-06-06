@@ -81,7 +81,7 @@ const MICRO_DOTS = {
 
 async function initMap() {
   const world = await d3.json(
-    "https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"
+    "https://cdn.jsdelivr.net/npm/visionscarto-world-atlas@1/world/110m.json"
   );
   const countries110m = topojson.feature(world, world.objects.countries);
   const svgEl = document.getElementById("world-map");
@@ -116,20 +116,18 @@ async function initMap() {
     .attr("d", path)
     .attr("data-numeric", d => d.id)
     .each(function (d) {
-      const iso2 = numericToIso2[+d.id];
-      if (d.id === undefined) {
-        console.log(d)
+      // TODO: ugly fix to include Kosovo which has the wrong numeric ID
+      // it should be 926 instead of '-2'
+      if (d.id === "-2") {
+        d.id = 926;
       }
-      console.log(`${iso2} -> ${d.id}`)
+
+      const iso2 = numericToIso2[+d.id];
       if (iso2) {
-        console.log("in set");
         this.dataset.iso2 = iso2;
         this.classList.add("in-set");
         pathByNumeric[+d.id] = this;
-      } else {
-        console.log("not in set");
       }
-
     });
 
   // Dot markers for countries too small to have a visible path
