@@ -117,11 +117,19 @@ async function initMap() {
     .attr("data-numeric", d => d.id)
     .each(function (d) {
       const iso2 = numericToIso2[+d.id];
+      if (d.id === undefined) {
+        console.log(d)
+      }
+      console.log(`${iso2} -> ${d.id}`)
       if (iso2) {
+        console.log("in set");
         this.dataset.iso2 = iso2;
         this.classList.add("in-set");
         pathByNumeric[+d.id] = this;
+      } else {
+        console.log("not in set");
       }
+
     });
 
   // Dot markers for countries too small to have a visible path
@@ -198,9 +206,9 @@ function buildTable(language, guessed) {
     const tr = tableBody.insertRow();
 
     for (const continent of CONTINENTS) {
-      const td = tr.insertCell();
       const country = continentCountries[continent][i];
       if (country) {
+        const td = tr.insertCell();
         td.dataset.iso2 = country.iso2;
         td.textContent = country.name[language];
         if (!guessed.has(country.iso2)) {

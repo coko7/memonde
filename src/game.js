@@ -166,7 +166,11 @@ function handleSubmit() {
   const result = matchInput(raw, indexes, state.guessed);
 
   if (!result || result.type === "nomatch") { showFeedback("?", "wrong"); return; }
-  if (result.type === "duplicate") { showFeedback(STRINGS[state.language].alreadyGot, "duplicate"); return; }
+  if (result.type === "duplicate") {
+    inputEl.value = "";
+    showFeedback(STRINGS[state.language].alreadyGot, "duplicate");
+    return;
+  }
 
   acceptGuess(result.iso2);
 }
@@ -225,11 +229,13 @@ async function shareScore() {
   const text = lines.join("\n");
   const url = window.location.href;
 
+  const fullText = `${text}\n${url}`;
+
   try {
-    if (navigator.share && navigator.canShare?.({ title: "Memonde", text, url })) {
-      await navigator.share({ title: "Memonde", text, url });
+    if (navigator.share) {
+      await navigator.share({ text: fullText });
     } else {
-      await navigator.clipboard.writeText(`${text}\n${url}`);
+      await navigator.clipboard.writeText(fullText);
       btnShare.textContent = `✓ ${STRINGS[lang].copied}`;
       shareTimeoutId = setTimeout(() => {
         const lang = state.language;
