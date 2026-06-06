@@ -92,7 +92,7 @@ function buildIndexes(lang) {
   return { exactIndex, fuzzyList };
 }
 
-function matchInput(raw, lang, indexes, guessed) {
+function matchInput(raw, indexes, guessed) {
   if (!raw.trim()) return null;
 
   const normalizedInput = normalize(raw);

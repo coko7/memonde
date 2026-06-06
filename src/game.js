@@ -142,36 +142,46 @@ function resetToIdle() {
 }
 
 /* ── Submit handler ── */
+function acceptGuess(iso2) {
+  state.guessed.add(iso2);
+  state.score++;
+
+  scoreEl.textContent = state.score;
+  inputEl.value = "";
+
+  showFeedback("✓", "correct");
+  highlightCountry(iso2, "guessed");
+  revealInTable(iso2);
+  updateTableHeader(state.language, state.guessed);
+
+  if (state.score === 197) endGame();
+}
+
 function handleSubmit() {
   if (state.status !== "running") return;
 
   const raw = inputEl.value;
   if (!raw.trim()) return;
 
-  const result = matchInput(raw, state.language, indexes, state.guessed);
+  const result = matchInput(raw, indexes, state.guessed);
 
-  if (!result || result.type === "nomatch") {
-    showFeedback("?", "wrong");
-    return;
+  if (!result || result.type === "nomatch") { showFeedback("?", "wrong"); return; }
+  if (result.type === "duplicate") { showFeedback(STRINGS[state.language].alreadyGot, "duplicate"); return; }
+
+  acceptGuess(result.iso2);
+}
+
+function handleInput() {
+  if (state.status !== "running") return;
+
+  const raw = inputEl.value;
+  if (!raw.trim() || raw.length < 3) return;
+
+  // Auto-submit on exact match only (alias or canonical name), not fuzzy
+  const iso2 = indexes.exactIndex.get(normalize(raw));
+  if (iso2 && !state.guessed.has(iso2)) {
+    acceptGuess(iso2);
   }
-
-  if (result.type === "duplicate") {
-    showFeedback(STRINGS[state.language].alreadyGot, "duplicate");
-    return;
-  }
-
-  // Correct!
-  state.guessed.add(result.iso2);
-  state.score++;
-  scoreEl.textContent = state.score;
-  inputEl.value = "";
-
-  showFeedback("✓", "correct");
-  highlightCountry(result.iso2, "guessed");
-  revealInTable(result.iso2);
-  updateTableHeader(state.language, state.guessed);
-
-  if (state.score === 197) endGame();
 }
 
 /* ── Language toggle ── */
@@ -241,6 +251,7 @@ btnAction.addEventListener("click", () => {
 inputEl.addEventListener("keydown", e => {
   if (e.key === "Enter") handleSubmit();
 });
+inputEl.addEventListener("input", handleInput);
 
 btnEn.addEventListener("click", () => setLanguage("en"));
 btnFr.addEventListener("click", () => setLanguage("fr"));

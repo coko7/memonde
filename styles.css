@@ -14,11 +14,12 @@
   --on-missed: #fff;
   --text: #cdd6f4;
   --text-dim: #a6adc8;
-  --country-default: #313244;
-  --country-hover: #45475a;
-  --country-guessed: #a6e3a1;
-  --country-missed: #f38ba8;
-  --country-stroke: #1e1e2e;
+  --country-default: #939ab7;
+  --country-not-in-set: #24273a;
+  --country-hover: #8087a2;
+  --country-guessed: #a6da95;
+  --country-missed: #ed8796;
+  --country-stroke: #24273a;
   --ocean: #11111b;
 }
 
@@ -36,12 +37,13 @@
   --on-missed: #fff;
   --text: #4c4f69;
   --text-dim: #6c6f85;
-  --country-default: #ffff80;
-  --country-hover: green;
-  --country-guessed: #66ff66;
-  --country-missed: #ff6666;
-  --country-stroke: black;
-  --ocean: #64beff;
+  --country-default: #f2d5cf;
+  --country-not-in-set: #c6d0f5;
+  --country-hover: #eebebe;
+  --country-guessed: #a6d189;
+  --country-missed: #e78284;
+  --country-stroke: #24273a;
+  --ocean: #8caaee;
 }
 
 body {
@@ -148,7 +150,11 @@ body {
 
 #ocean-bg { fill: var(--ocean); }
 
-#world-map path,
+#world-map path {
+  fill: var(--country-not-in-set);
+}
+
+#world-map path.in-set,
 #world-map circle.dot-marker {
   fill: var(--country-default);
   stroke: var(--country-stroke);
@@ -291,6 +297,7 @@ body {
   text-align: center;
   border-right: 1px solid var(--border);
 }
+
 #continent-table td:last-child { border-right: none; }
 
 #continent-table tbody tr:nth-child(odd)  td { background: var(--surface); }
