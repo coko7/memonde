@@ -14,6 +14,12 @@ Type a country name, hit Enter, and watch it light up on the map. See how many y
 - **Interactive map** — guessed countries highlight green, missed ones reveal in red at the end; scroll to zoom, drag to pan
 - **Light / dark theme** — toggle in the top bar
 
+## 🌐 Play online
+
+A live version of the game is available at: [memonde.coko7.fr](https://memonde.coko7.fr)
+
+There is no backend, so you can play while offline provided your browser has downloaded the files.
+
 ## 🏠 Running locally
 
 No build step required — open `index.html` directly in a browser or serve the folder with any static file server:
