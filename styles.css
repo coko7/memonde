@@ -139,6 +139,24 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+}
+
+#map-tooltip {
+  position: absolute;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  transform: translate(-50%, calc(-100% - 8px));
+  z-index: 10;
 }
 
 #world-map {
@@ -162,9 +180,17 @@ body {
   cursor: default;
   transition: fill 0.25s;
 }
-#world-map .in-set:hover { fill: var(--country-hover) !important; }
-#world-map .guessed { fill: var(--country-guessed) !important; }
-#world-map .missed  { fill: var(--country-missed) !important; }
+#world-map .in-set:hover {
+  fill: var(--country-hover) !important;
+}
+#world-map .guessed {
+  fill: var(--country-guessed) !important;
+  cursor: pointer !important;
+}
+#world-map .missed  {
+  fill: var(--country-missed) !important;
+  cursor: pointer !important;
+}
 
 /* ── Input row ── */
 #input-row {
@@ -292,7 +318,6 @@ body {
 
 #continent-table td {
   padding: 0.2rem 0.5rem;
-  vertical-align: top;
   color: var(--text);
   text-align: center;
   border-right: 1px solid var(--border);

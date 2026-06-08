@@ -52,11 +52,27 @@ const btnFr = document.getElementById("btn-fr");
 const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
 const btnShare = document.getElementById("btn-share");
+const mapTooltipEl = document.getElementById("map-tooltip");
 
 /* ── Map ── */
 let pathByNumeric = {};
 let dotByIso2 = {};
 let feedbackTimeout = null;
+let mapTooltipTimeout = null;
+
+function showMapTooltip(name, x, y) {
+  clearTimeout(mapTooltipTimeout);
+  mapTooltipEl.textContent = name;
+  mapTooltipEl.style.left = x + "px";
+  mapTooltipEl.style.top = y + "px";
+  mapTooltipEl.style.opacity = "1";
+  mapTooltipTimeout = setTimeout(() => { mapTooltipEl.style.opacity = "0"; }, 1500);
+}
+
+function hideMapTooltip() {
+  clearTimeout(mapTooltipTimeout);
+  mapTooltipEl.style.opacity = "0";
+}
 
 // [lon, lat] centroids for countries too small to see at 110m resolution
 // TODO: Avoid hardcoding stuff, it would be better to get this data from the dataset
@@ -152,6 +168,7 @@ async function initMap() {
     .translateExtent([[0, 0], [width, height]])
     .on("zoom", event => {
       mapGroup.attr("transform", event.transform);
+      hideMapTooltip();
     });
 
   svg.call(zoom);
@@ -159,6 +176,20 @@ async function initMap() {
   // Double-click resets to initial view instead of zooming in
   svg.on("dblclick.zoom", () => {
     svg.transition().duration(400).call(zoom.transform, d3.zoomIdentity);
+  });
+
+  // Show country name on click for guessed/missed countries
+  svg.on("click", (event) => {
+    const target = event.target;
+    const iso2 = target.dataset.iso2;
+    if (!iso2) return;
+    if (!target.classList.contains("guessed") && !target.classList.contains("missed")) return;
+
+    const cell = tableBody.querySelector(`[data-iso2="${iso2}"]`);
+    if (!cell) return;
+
+    const svgRect = event.currentTarget.getBoundingClientRect();
+    showMapTooltip(cell.textContent, event.clientX - svgRect.left, event.clientY - svgRect.top);
   });
 }
 
