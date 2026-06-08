@@ -54,6 +54,7 @@ const ALIASES = {
   CZ: { en: ["Czechia", "Czech Republic"], fr: ["Tchéquie", "République tchèque"] },
   DE: { en: ["Germany"], fr: ["Allemagne"] },
   // DM: { en: ["Dominica"], fr: [] },
+  FJ: { en: ["Fidji", "Fiji"], fr: ["Fidji", "Fiji"] },
   FM: { en: ["Micronesia"], fr: ["Micronésie"] },
   GB: { en: ["UK", "Britain", "Great Britain", "England", "United Kingdom"], fr: ["UK", "Angleterre", "Grande-Bretagne", "Royaume Uni"] },
   GD: { en: ["Grenada"], fr: ["Grenade"] },
