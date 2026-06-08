@@ -113,6 +113,7 @@ function endGame() {
   revealMissed(state.guessed);
   revealMissedInTable(state.guessed);
   btnShare.hidden = false;
+  btnCopySummary.hidden = false;
 }
 
 function resetToIdle() {
@@ -132,6 +133,7 @@ function resetToIdle() {
   btnEn.disabled = false;
   btnFr.disabled = false;
   btnShare.hidden = true;
+  btnCopySummary.hidden = true;
 
   // Reset map
   document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
@@ -200,7 +202,9 @@ function setLanguage(lang) {
   scoreLabelEl.textContent = STRINGS[lang].score;
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
   btnShare.textContent = STRINGS[lang].share;
+  btnCopySummary.textContent = STRINGS[lang].copySummary;
   clearTimeout(shareTimeoutId);
+  clearTimeout(copySummaryTimeoutId);
 
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
@@ -247,6 +251,37 @@ async function shareScore() {
   }
 }
 
+/* ── Copy summary ── */
+let copySummaryTimeoutId = null;
+
+async function copySummary() {
+  const lang = state.language;
+  const str = STRINGS[lang];
+  const lines = [`🌍 Memonde — ${state.score}/197`, ""];
+
+  for (const continent of CONTINENTS) {
+    const countries = continentCountries[continent];
+    const guessed = countries.filter(c => state.guessed.has(c.iso2));
+    const missed  = countries.filter(c => !state.guessed.has(c.iso2));
+
+    lines.push(`${str.continents[continent]} (${guessed.length}/${countries.length})`);
+    if (guessed.length) lines.push(`  ✅ ${guessed.map(c => c.name[lang]).join(", ")}`);
+    if (missed.length)  lines.push(`  ❌ ${missed.map(c => c.name[lang]).join(", ")}`);
+    lines.push("");
+  }
+
+  try {
+    await navigator.clipboard.writeText(lines.join("\n").trimEnd());
+    clearTimeout(copySummaryTimeoutId);
+    btnCopySummary.textContent = `✓ ${str.copied}`;
+    copySummaryTimeoutId = setTimeout(() => {
+      btnCopySummary.textContent = STRINGS[state.language].copySummary;
+    }, 2000);
+  } catch {
+    // clipboard unavailable — silently ignore
+  }
+}
+
 /* ── Event wiring ── */
 btnAction.addEventListener("click", () => {
   if (state.status === "idle") startGame();
@@ -264,6 +299,7 @@ btnFr.addEventListener("click", () => setLanguage("fr"));
 
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 btnShare.addEventListener("click", shareScore);
+btnCopySummary.addEventListener("click", copySummary);
 
 /* ── Init ── */
 (async function init() {
@@ -284,4 +320,5 @@ btnShare.addEventListener("click", shareScore);
   scoreLabelEl.textContent = STRINGS[lang].score;
   btnAction.textContent = STRINGS[lang].start;
   btnShare.textContent = STRINGS[lang].share;
+  btnCopySummary.textContent = STRINGS[lang].copySummary;
 })();

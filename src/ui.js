@@ -5,6 +5,7 @@ const STRINGS = {
     start: "Start",
     share: "Share",
     copied: "Copied",
+    copySummary: "Copy summary",
     giveUp: "Give Up",
     playAgain: "Play Again",
     inputPlaceholder: "Type a country…",
@@ -23,6 +24,7 @@ const STRINGS = {
     start: "Démarrer",
     share: "Partager",
     copied: "Copié",
+    copySummary: "Copier le résumé",
     giveUp: "Abandonner",
     playAgain: "Rejouer",
     inputPlaceholder: "Tapez un pays…",
@@ -52,6 +54,7 @@ const btnFr = document.getElementById("btn-fr");
 const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
 const btnShare = document.getElementById("btn-share");
+const btnCopySummary = document.getElementById("btn-copy-summary");
 const mapTooltipEl = document.getElementById("map-tooltip");
 
 /* ── Map ── */

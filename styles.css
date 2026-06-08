@@ -261,7 +261,7 @@ body {
 #feedback.duplicate { color: var(--text-dim); }
 #feedback.wrong { color: var(--missed); }
 
-#btn-action {
+button.primary {
   padding: 0.55rem 1.2rem;
   font-size: 0.95rem;
   font-weight: 700;
@@ -273,11 +273,11 @@ body {
   white-space: nowrap;
   transition: opacity 0.15s, transform 0.1s;
 }
-#btn-action:hover  { opacity: 0.85; }
-#btn-action:active { transform: scale(0.97); }
-#btn-action.danger { background: var(--missed); color: var(--on-missed); }
+button.primary:hover  { opacity: 0.85; }
+button.primary:active { transform: scale(0.97); }
+button.primary.danger { background: var(--missed); color: var(--on-missed); }
 
-#btn-share {
+button.secondary {
   padding: 0.55rem 1.2rem;
   font-size: 0.95rem;
   font-weight: 700;
@@ -289,8 +289,8 @@ body {
   white-space: nowrap;
   transition: background 0.15s, color 0.15s, transform 0.1s;
 }
-#btn-share:hover  { background: var(--accent-glow); }
-#btn-share:active { transform: scale(0.97); }
+button.secondary:hover  { background: var(--accent-glow); }
+button.secondary:active { transform: scale(0.97); }
 
 /* ── Continent table ── */
 #table-wrap {
