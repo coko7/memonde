@@ -73,6 +73,12 @@ body {
   gap: 1rem;
 }
 
+#topbar #right-menu {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
 #lang-toggle {
   display: flex;
   align-items: center;
@@ -100,6 +106,24 @@ body {
 
 .lang-sep { color: var(--border); font-size: 0.9rem; }
 
+#topbar-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--accent);
+  letter-spacing: 0.04em;
+}
+
+/* ── Score bar ── */
+#score-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.4rem 1.25rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
 #timer-display {
   font-size: 1.6rem;
   font-variant-numeric: tabular-nums;
@@ -111,7 +135,6 @@ body {
 #timer-display.urgent { color: var(--missed); }
 
 #score-display {
-  font-size: 0.95rem;
   font-weight: 600;
   color: var(--text-dim);
 }
@@ -124,7 +147,6 @@ body {
   color: var(--text-dim);
   border-radius: 4px;
   padding: 0.2rem 0.6rem;
-  font-size: 0.95rem;
   cursor: pointer;
   transition: border-color 0.15s, color 0.15s;
   line-height: 1;
@@ -351,5 +373,7 @@ button.secondary:active { transform: scale(0.97); }
 }
 
 @media (max-width: 600px) {
-  #world-map { height: 200px; }
+  #app { width: 100%; }
+  #world-map { width: 600px; height: 250px; }
+  #continent-table { min-width: 700px; }
 }
