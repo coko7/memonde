@@ -318,6 +318,7 @@ body {
 
 #continent-table td {
   padding: 0.2rem 0.5rem;
+  height: 2rem;
   color: var(--text);
   text-align: center;
   border-right: 1px solid var(--border);
