@@ -239,8 +239,9 @@ function buildTable(language, guessed) {
 
     for (const continent of CONTINENTS) {
       const country = continentCountries[continent][i];
+      const td = tr.insertCell();
+
       if (country) {
-        const td = tr.insertCell();
         td.dataset.iso2 = country.iso2;
         td.textContent = country.name[language];
         if (!guessed.has(country.iso2)) {

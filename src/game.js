@@ -208,7 +208,6 @@ function setLanguage(lang) {
 
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
-    buildTable(state.language, state.guessed);
   } else if (state.status === "ended") {
     btnAction.textContent = STRINGS[lang].playAgain;
     buildTable(state.language, state.guessed);
@@ -262,11 +261,11 @@ async function copySummary() {
   for (const continent of CONTINENTS) {
     const countries = continentCountries[continent];
     const guessed = countries.filter(c => state.guessed.has(c.iso2));
-    const missed  = countries.filter(c => !state.guessed.has(c.iso2));
+    const missed = countries.filter(c => !state.guessed.has(c.iso2));
 
     lines.push(`${str.continents[continent]} (${guessed.length}/${countries.length})`);
     if (guessed.length) lines.push(`  ✅ ${guessed.map(c => c.name[lang]).join(", ")}`);
-    if (missed.length)  lines.push(`  ❌ ${missed.map(c => c.name[lang]).join(", ")}`);
+    if (missed.length) lines.push(`  ❌ ${missed.map(c => c.name[lang]).join(", ")}`);
     lines.push("");
   }
 
@@ -315,7 +314,6 @@ btnCopySummary.addEventListener("click", copySummary);
   document.getElementById("btn-theme").textContent = theme === "dark" ? "☀️" : "🌙";
 
   await initMap();
-  buildTable(lang, state.guessed);
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
   scoreLabelEl.textContent = STRINGS[lang].score;
   btnAction.textContent = STRINGS[lang].start;
