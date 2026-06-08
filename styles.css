@@ -351,6 +351,19 @@ button.secondary:active { transform: scale(0.97); }
   margin-top: 0.1rem;
 }
 
+#continent-table th.continent-done { color: var(--correct); }
+#continent-table th.continent-done .count { color: var(--correct); opacity: 0.7; }
+
+@keyframes continent-complete {
+  0%   { transform: scale(1); }
+  25%  { transform: scale(1.15); color: var(--correct); }
+  55%  { transform: scale(1.07); }
+  100% { transform: scale(1); }
+}
+#continent-table th.continent-flash {
+  animation: continent-complete 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97);
+}
+
 #continent-table td {
   padding: 0.2rem 0.5rem;
   height: 2rem;

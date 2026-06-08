@@ -156,6 +156,17 @@ function acceptGuess(iso2) {
   revealInTable(iso2);
   updateTableHeader(state.language, state.guessed);
 
+  const country = window.COUNTRIES.find(c => c.iso2 === iso2);
+  if (country) {
+    const doneCount = [...state.guessed].filter(
+      id => window.COUNTRIES.find(c => c.iso2 === id)?.continent === country.continent
+    ).length;
+
+    if (doneCount === continentTotals[country.continent]) {
+      flashContinentHeader(country.continent);
+    }
+  }
+
   if (state.score === 197) endGame();
 }
 

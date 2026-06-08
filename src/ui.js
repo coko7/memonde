@@ -230,6 +230,8 @@ function buildTable(language, guessed) {
     ).length;
     th.innerHTML = `${str.continents[continent]}<span class="count">${guessedCount}/${continentTotals[continent]}</span>`;
     th.dataset.continent = continent;
+
+    if (guessedCount === continentTotals[continent]) th.classList.add("continent-done");
     tableHeader.appendChild(th);
   }
 
@@ -274,7 +276,24 @@ function updateTableHeader(language, guessed) {
       window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
     ).length;
     th.innerHTML = `${str.continents[continent]}<span class="count">${guessedCount}/${continentTotals[continent]}</span>`;
+    th.classList.toggle("continent-done", guessedCount === continentTotals[continent]);
   }
+}
+
+function flashContinentHeader(continent) {
+  const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
+  if (!th) return;
+
+  th.classList.add("continent-done");
+  th.classList.remove("continent-flash");
+
+  // force CSS animation reflow
+  void th.offsetWidth;
+
+  th.classList.add("continent-flash");
+  th.addEventListener("animationend", () => th.classList.remove("continent-flash"), {
+    once: true
+  });
 }
 
 function revealInTable(iso2, isMissed = false) {
