@@ -61,6 +61,14 @@ const mapTooltipEl = document.getElementById("map-tooltip");
 /* ── Map ── */
 let pathByNumeric = {};
 let dotByIso2 = {};
+let pathsByParent = {}; // parentIso2 → [element] for dependent territories
+
+// TopoJSON numeric id → parent country iso2
+const TERRITORIES = [
+  { id: 304, parentIso2: "DK" },  // Greenland → Denmark
+  { id: 732, parentIso2: "MA" },  // Western Sahara → Morocco
+  { id: -3, parentIso2: "SO" },  // Somaliland → Somalia
+];
 let feedbackTimeout = null;
 let mapTooltipTimeout = null;
 
@@ -147,6 +155,14 @@ async function initMap() {
         this.dataset.iso2 = iso2;
         this.classList.add("in-set");
         pathByNumeric[+d.id] = this;
+      } else {
+        const parentIso2 = TERRITORIES.find(t => t.id === +d.id)?.parentIso2;
+        if (parentIso2) {
+          this.dataset.iso2 = parentIso2;
+          this.classList.add("in-set");
+          if (!pathsByParent[parentIso2]) pathsByParent[parentIso2] = [];
+          pathsByParent[parentIso2].push(this);
+        }
       }
     });
 
@@ -206,6 +222,7 @@ function highlightCountry(iso2, cls) {
 
   if (path) path.classList.add(cls);
   if (dot) dot.classList.add(cls);
+  for (const el of (pathsByParent[iso2] || [])) el.classList.add(cls);
 }
 
 function revealMissed(guessed) {
