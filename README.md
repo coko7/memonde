@@ -1,4 +1,4 @@
-# 🌍 memonde
+# 🌍 MéMonde
 
 <img width="1714" height="1037" alt="banner" src="https://github.com/user-attachments/assets/a025b188-4be3-4ae3-8302-1fdf8f0d6405" />
 
