@@ -366,6 +366,20 @@ button.secondary:active { transform: scale(0.97); }
 
 #continent-table td.cell-hidden { color: transparent; }
 
+#continent-table td.guessed-cell {
+  color: var(--correct);
+  font-weight: 700;
+}
+
+.cell-aliases { display: none; }
+#continent-table td:not(.cell-hidden) .cell-aliases {
+  display: block;
+  font-size: 0.65rem;
+  color: var(--text-dim);
+  font-style: italic;
+  margin-top: 0.1rem;
+}
+
 #continent-table td.missed-cell {
   color: var(--missed);
   font-style: italic;

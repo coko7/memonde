@@ -51,6 +51,7 @@ const feedbackEl = document.getElementById("feedback");
 const btnAction = document.getElementById("btn-action");
 const btnEn = document.getElementById("btn-en");
 const btnFr = document.getElementById("btn-fr");
+const continentTableEl = document.getElementById("continent-table");
 const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
 const btnShare = document.getElementById("btn-share");
@@ -244,7 +245,18 @@ function buildTable(language, guessed) {
       if (country) {
         td.dataset.iso2 = country.iso2;
         td.textContent = country.name[language];
-        if (!guessed.has(country.iso2)) {
+        const aliases = country.aliases[language] || [];
+
+        if (aliases.length) {
+          const small = document.createElement("small");
+          small.className = "cell-aliases";
+          small.textContent = aliases.filter(a => a !== country.name[language]).join(", ");
+          td.appendChild(small);
+        }
+
+        if (guessed.has(country.iso2)) {
+          td.classList.add("guessed-cell");
+        } else {
           td.classList.add("cell-hidden");
         }
       }
@@ -270,6 +282,7 @@ function revealInTable(iso2, isMissed = false) {
   if (!cell) return;
   cell.classList.remove("cell-hidden");
   if (isMissed) cell.classList.add("missed-cell");
+  else cell.classList.add("guessed-cell");
 }
 
 function revealMissedInTable(guessed) {
