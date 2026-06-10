@@ -36,6 +36,7 @@ let state = {
   guessed: new Set(),
   endTime: null,
   score: 0,
+  remainingMs: 0,   // set on win, 0 on timeout
 };
 let indexes = null;
 let timerInterval = null;
@@ -96,12 +97,15 @@ function startGame() {
   timerInterval = setInterval(tickTimer, 500);
 }
 
-function endGame() {
+function endGame(won = false) {
   clearInterval(timerInterval);
   state.status = "ended";
+  state.remainingMs = won ? Math.max(0, state.endTime - Date.now()) : 0;
 
-  timerEl.textContent = "00:00";
-  timerEl.classList.remove("urgent");
+  if (!won) {
+    timerEl.textContent = "00:00";
+    timerEl.classList.remove("urgent");
+  }
   inputEl.parentElement.hidden = true;
   inputEl.disabled = true;
   inputEl.value = "";
@@ -167,7 +171,7 @@ function acceptGuess(iso2) {
     }
   }
 
-  if (state.score === 197) endGame();
+  if (state.score === 197) endGame(true);
 }
 
 function handleSubmit() {
@@ -232,6 +236,8 @@ async function shareScore() {
 
   const lang = state.language;
   const lines = [`🌍 Memonde — ${state.score} / 197`, ''];
+  if (state.remainingMs > 0) lines.push(`⏱ ${formatTime(state.remainingMs)} ${STRINGS[lang].timeRemaining}`);
+  lines.push('');
 
   for (const continent of CONTINENTS) {
     const count = [...state.guessed].filter(
@@ -268,6 +274,10 @@ async function copySummary() {
   const lang = state.language;
   const str = STRINGS[lang];
   const lines = [`🌍 Memonde — ${state.score}/197`, ""];
+  if (state.remainingMs > 0) {
+    lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`, "");
+  }
+
 
   for (const continent of CONTINENTS) {
     const countries = continentCountries[continent];

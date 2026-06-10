@@ -10,6 +10,7 @@ const STRINGS = {
     playAgain: "Play Again",
     inputPlaceholder: "Type a country…",
     alreadyGot: "already got it",
+    timeRemaining: "Remaining time: ",
     continents: {
       "Africa": "Africa",
       "Asia": "Asia",
@@ -29,6 +30,7 @@ const STRINGS = {
     playAgain: "Rejouer",
     inputPlaceholder: "Tapez un pays…",
     alreadyGot: "déjà trouvé",
+    timeRemaining: "Temps restant :",
     continents: {
       "Africa": "Afrique",
       "Asia": "Asie",
@@ -208,8 +210,10 @@ async function initMap() {
     const cell = tableBody.querySelector(`[data-iso2="${iso2}"]`);
     if (!cell) return;
 
+    const localeName = cell.dataset.locacaleName;
+
     const svgRect = event.currentTarget.getBoundingClientRect();
-    showMapTooltip(cell.textContent, event.clientX - svgRect.left, event.clientY - svgRect.top);
+    showMapTooltip(localeName, event.clientX - svgRect.left, event.clientY - svgRect.top);
   });
 }
 
@@ -263,6 +267,7 @@ function buildTable(language, guessed) {
 
       if (country) {
         td.dataset.iso2 = country.iso2;
+        td.dataset.locacaleName = country.name[language];
         td.textContent = country.name[language];
         const aliases = country.aliases[language] || [];
 
