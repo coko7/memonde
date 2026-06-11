@@ -236,7 +236,7 @@ async function shareScore() {
 
   const lang = state.language;
   const lines = [`🌍 Memonde — ${state.score} / 197`, ''];
-  if (state.remainingMs > 0) lines.push(`⏱ ${formatTime(state.remainingMs)} ${STRINGS[lang].timeRemaining}`);
+  if (state.remainingMs > 0) lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`);
   lines.push('');
 
   for (const continent of CONTINENTS) {
@@ -275,7 +275,7 @@ async function copySummary() {
   const str = STRINGS[lang];
   const lines = [`🌍 Memonde — ${state.score}/197`, ""];
   if (state.remainingMs > 0) {
-    lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`, "");
+    lines.push(`⏱ ${formatTime(state.remainingMs)} ${STRINGS[lang].timeRemaining}`, "");
   }
 
 
