@@ -275,7 +275,7 @@ async function copySummary() {
   const str = STRINGS[lang];
   const lines = [`🌍 Memonde — ${state.score}/197`, ""];
   if (state.remainingMs > 0) {
-    lines.push(`⏱ ${STRINGS[lang].timeRemaining}: ${formatTime(state.remainingMs)}`, "");
+    lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`, "");
   }
 
 
