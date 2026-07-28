@@ -16,7 +16,7 @@ Type a country name, hit Enter, and watch it light up on the map. See how many y
 
 ## 🌐 Play online
 
-A live version of the game is available at: [memonde.coko7.fr](https://memonde.coko7.fr)
+A live version of the game is available at: [memonde.lazyfreax.dev](https://memonde.lazyfreax.dev)
 
 There is no backend, so you can play while offline provided your browser has downloaded the files.
 
