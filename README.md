@@ -8,6 +8,7 @@ Type a country name, hit Enter, and watch it light up on the map. See how many y
 ## ✨ Features
 
 - **197 countries** — all 193 UN members plus Vatican City, Palestine, Taiwan, and Kosovo
+- **Game modes** — play the whole world, or pick a single continent (Africa, Asia, Europe, North America, South America, Oceania); timer and target scale down to match
 - **Fuzzy matching** — minor typos are forgiven; confusable pairs (Iran/Iraq, Niger/Nigeria, etc.) require the correct name
 - **Alternate names** — common aliases accepted (USA, Burma, Ivory Coast, DRC…)
 - **EN / FR** — switch between English and French; only the selected language's names count
