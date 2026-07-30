@@ -10,7 +10,7 @@ const STRINGS = {
     playAgain: "Play Again",
     inputPlaceholder: "Type a country…",
     alreadyGot: "already got it",
-    timeRemaining: "Remaining time: ",
+    timeRemaining: "Remaining time:",
     continents: {
       "Africa": "Africa",
       "Asia": "Asia",
