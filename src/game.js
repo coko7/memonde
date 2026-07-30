@@ -33,9 +33,11 @@ function inSameFamily(a, b) {
 let state = {
   status: "idle",   // idle | running | ended
   language: "en",
+  mode: "world",    // "world" | one of CONTINENTS
   guessed: new Set(),
   endTime: null,
   score: 0,
+  total: 197,
   remainingMs: 0,   // set on win, 0 on timeout
 };
 let indexes = null;
@@ -57,6 +59,41 @@ for (const continent of CONTINENTS) {
   continentTotals[continent] = continentCountries[continent].length;
 }
 
+const WORLD_DURATION_MS = 15 * 60 * 1000;
+
+function getTargetCountries() {
+  return state.mode === "world" ? window.COUNTRIES : continentCountries[state.mode];
+}
+
+function getPlayedContinents() {
+  return state.mode === "world" ? CONTINENTS : [state.mode];
+}
+
+function computeDurationMs(total) {
+  return Math.round(total * WORLD_DURATION_MS / 197);
+}
+
+function isInMode(iso2) {
+  if (state.mode === "world") return true;
+  return window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === state.mode;
+}
+
+function updateIdlePreview() {
+  const total = getTargetCountries().length;
+  state.total = total;
+  scoreTargetEl.textContent = total;
+  if (state.status !== "running") {
+    timerEl.textContent = formatTime(computeDurationMs(total));
+  }
+}
+
+function setMode(mode) {
+  if (state.status === "running") return;
+  state.mode = mode;
+  localStorage.setItem("mode", mode);
+  updateIdlePreview();
+}
+
 /* ── Timer ── */
 function tickTimer() {
   const remaining = state.endTime - Date.now();
@@ -70,7 +107,8 @@ function startGame() {
   state.status = "running";
   state.guessed = new Set();
   state.score = 0;
-  state.endTime = Date.now() + 15 * 60 * 1000;
+  state.total = getTargetCountries().length;
+  state.endTime = Date.now() + computeDurationMs(state.total);
 
   indexes = buildIndexes(state.language);
 
@@ -79,12 +117,13 @@ function startGame() {
     el.classList.remove("guessed", "missed");
   });
 
-  buildTable(state.language, state.guessed);
+  buildTable(state.language, state.guessed, state.mode);
 
   // UI
   scoreEl.textContent = "0";
+  scoreTargetEl.textContent = state.total;
   timerEl.classList.remove("urgent");
-  timerEl.textContent = "15:00";
+  timerEl.textContent = formatTime(state.endTime - Date.now());
   inputEl.parentElement.hidden = false;
   inputEl.disabled = false;
   inputEl.value = "";
@@ -93,6 +132,9 @@ function startGame() {
   btnAction.classList.add("danger");
   btnEn.disabled = true;
   btnFr.disabled = true;
+  modeSelectEl.disabled = true;
+
+  focusMapOnContinent(state.mode);
 
   timerInterval = setInterval(tickTimer, 500);
 }
@@ -113,9 +155,11 @@ function endGame(won = false) {
   btnAction.classList.remove("danger");
   btnEn.disabled = false;
   btnFr.disabled = false;
+  modeSelectEl.disabled = false;
 
-  revealMissed(state.guessed);
-  revealMissedInTable(state.guessed);
+  const targets = getTargetCountries();
+  revealMissed(state.guessed, targets);
+  revealMissedInTable(state.guessed, targets);
   btnShare.hidden = false;
   btnCopySummary.hidden = false;
 }
@@ -126,7 +170,6 @@ function resetToIdle() {
   state.score = 0;
   state.endTime = null;
 
-  timerEl.textContent = "15:00";
   timerEl.classList.remove("urgent");
   scoreEl.textContent = "0";
   inputEl.parentElement.hidden = true;
@@ -136,6 +179,7 @@ function resetToIdle() {
   btnAction.classList.remove("danger");
   btnEn.disabled = false;
   btnFr.disabled = false;
+  modeSelectEl.disabled = false;
   btnShare.hidden = true;
   btnCopySummary.hidden = true;
 
@@ -143,8 +187,10 @@ function resetToIdle() {
   document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
     el.classList.remove("guessed", "missed");
   });
+  focusMapOnContinent("world");
 
-  buildTable(state.language, state.guessed);
+  buildTable(state.language, state.guessed, state.mode);
+  updateIdlePreview();
 }
 
 /* ── Submit handler ── */
@@ -158,7 +204,7 @@ function acceptGuess(iso2) {
   showFeedback("✓", "correct");
   highlightCountry(iso2, "guessed");
   revealInTable(iso2);
-  updateTableHeader(state.language, state.guessed);
+  updateTableHeader(state.language, state.guessed, state.mode);
 
   const country = window.COUNTRIES.find(c => c.iso2 === iso2);
   if (country) {
@@ -171,7 +217,7 @@ function acceptGuess(iso2) {
     }
   }
 
-  if (state.score === 197) endGame(true);
+  if (state.score === state.total) endGame(true);
 }
 
 function handleSubmit() {
@@ -183,6 +229,7 @@ function handleSubmit() {
   const result = matchInput(raw, indexes, state.guessed);
 
   if (!result || result.type === "nomatch") { showFeedback("?", "wrong"); return; }
+  if (result.type === "correct" && !isInMode(result.iso2)) { showFeedback("?", "wrong"); return; }
   if (result.type === "duplicate") {
     inputEl.value = "";
     showFeedback(STRINGS[state.language].alreadyGot, "duplicate");
@@ -200,7 +247,7 @@ function handleInput() {
 
   // Auto-submit on exact match only (alias or canonical name), not fuzzy
   const iso2 = indexes.exactIndex.get(normalize(raw));
-  if (iso2 && !state.guessed.has(iso2)) {
+  if (iso2 && !state.guessed.has(iso2) && isInMode(iso2)) {
     acceptGuess(iso2);
   }
 }
@@ -220,13 +267,14 @@ function setLanguage(lang) {
   btnCopySummary.textContent = STRINGS[lang].copySummary;
   clearTimeout(shareTimeoutId);
   clearTimeout(copySummaryTimeoutId);
+  buildModeOptions(lang, state.mode);
 
   if (state.status === "idle") {
     btnAction.textContent = STRINGS[lang].start;
   } else if (state.status === "ended") {
     btnAction.textContent = STRINGS[lang].playAgain;
-    buildTable(state.language, state.guessed);
-    revealMissedInTable(state.guessed);
+    buildTable(state.language, state.guessed, state.mode);
+    revealMissedInTable(state.guessed, getTargetCountries());
   }
 }
 
@@ -235,11 +283,11 @@ async function shareScore() {
   clearTimeout(shareTimeoutId);
 
   const lang = state.language;
-  const lines = [`🌍 Memonde — ${state.score} / 197`, ''];
+  const lines = [`🌍 Memonde — ${state.score} / ${state.total}`, ''];
   lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`)
   lines.push('');
 
-  for (const continent of CONTINENTS) {
+  for (const continent of getPlayedContinents()) {
     const count = [...state.guessed].filter(
       iso2 => window.COUNTRIES.find(country => country.iso2 === iso2)?.continent === continent
     ).length;
@@ -273,13 +321,13 @@ let copySummaryTimeoutId = null;
 async function copySummary() {
   const lang = state.language;
   const str = STRINGS[lang];
-  const lines = [`🌍 Memonde — ${state.score}/197`, ""];
+  const lines = [`🌍 Memonde — ${state.score}/${state.total}`, ""];
   if (state.remainingMs > 0) {
     lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`, "");
   }
 
 
-  for (const continent of CONTINENTS) {
+  for (const continent of getPlayedContinents()) {
     const countries = continentCountries[continent];
     const guessed = countries.filter(c => state.guessed.has(c.iso2));
     const missed = countries.filter(c => !state.guessed.has(c.iso2));
@@ -316,6 +364,7 @@ inputEl.addEventListener("input", handleInput);
 
 btnEn.addEventListener("click", () => setLanguage("en"));
 btnFr.addEventListener("click", () => setLanguage("fr"));
+modeSelectEl.addEventListener("change", () => setMode(modeSelectEl.value));
 
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
 btnShare.addEventListener("click", shareScore);
@@ -330,6 +379,11 @@ btnCopySummary.addEventListener("click", copySummary);
   btnEn.classList.toggle("active", lang === "en");
   btnFr.classList.toggle("active", lang === "fr");
 
+  // Mode: saved preference → default 'world'
+  const savedMode = localStorage.getItem("mode");
+  state.mode = CONTINENTS.includes(savedMode) ? savedMode : "world";
+  buildModeOptions(lang, state.mode);
+
   // Sync theme button icon with the theme applied by the inline <head> script
   const theme = document.documentElement.dataset.theme || "light";
   document.getElementById("btn-theme").textContent = theme === "dark" ? "☀️" : "🌙";
@@ -340,4 +394,5 @@ btnCopySummary.addEventListener("click", copySummary);
   btnAction.textContent = STRINGS[lang].start;
   btnShare.textContent = STRINGS[lang].share;
   btnCopySummary.textContent = STRINGS[lang].copySummary;
+  updateIdlePreview();
 })();

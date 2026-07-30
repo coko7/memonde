@@ -1,2 +1,5 @@
 data/countries.js
 data/countries.geojson
+
+.claude/
+.vscode/

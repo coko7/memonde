@@ -2,6 +2,7 @@
 const STRINGS = {
   en: {
     score: "Score",
+    world: "World",
     start: "Start",
     share: "Share",
     copied: "Copied",
@@ -22,6 +23,7 @@ const STRINGS = {
   },
   fr: {
     score: "Score",
+    world: "Monde",
     start: "Démarrer",
     share: "Partager",
     copied: "Copié",
@@ -53,6 +55,8 @@ const feedbackEl = document.getElementById("feedback");
 const btnAction = document.getElementById("btn-action");
 const btnEn = document.getElementById("btn-en");
 const btnFr = document.getElementById("btn-fr");
+const modeSelectEl = document.getElementById("mode-select");
+const scoreTargetEl = document.getElementById("score-target");
 const continentTableEl = document.getElementById("continent-table");
 const tableHeader = document.getElementById("table-header");
 const tableBody = document.getElementById("table-body");
@@ -60,10 +64,33 @@ const btnShare = document.getElementById("btn-share");
 const btnCopySummary = document.getElementById("btn-copy-summary");
 const mapTooltipEl = document.getElementById("map-tooltip");
 
+/* ── Mode select ── */
+function buildModeOptions(language, selectedMode) {
+  const str = STRINGS[language];
+  modeSelectEl.innerHTML = "";
+
+  const worldOpt = document.createElement("option");
+  worldOpt.value = "world";
+  worldOpt.textContent = str.world;
+  modeSelectEl.appendChild(worldOpt);
+
+  for (const continent of CONTINENTS) {
+    const opt = document.createElement("option");
+    opt.value = continent;
+    opt.textContent = str.continents[continent];
+    modeSelectEl.appendChild(opt);
+  }
+
+  modeSelectEl.value = selectedMode;
+}
+
 /* ── Map ── */
 let pathByNumeric = {};
 let dotByIso2 = {};
 let pathsByParent = {}; // parentIso2 → [element] for dependent territories
+let mapSvg, mapZoom, mapPathGen, mapWidth, mapHeight;
+const featuresByContinent = {}; // continent → [GeoJSON feature], playable countries only
+for (const continent of CONTINENTS) featuresByContinent[continent] = [];
 
 // TopoJSON numeric id → parent country iso2
 const TERRITORIES = [
@@ -121,10 +148,14 @@ async function initMap() {
   const projection = d3.geoNaturalEarth1()
     .fitSize([width, height], countries110m);
   const path = d3.geoPath().projection(projection);
+  mapPathGen = path;
+  mapWidth = width;
+  mapHeight = height;
 
   const svg = d3.select("#world-map")
     .attr("viewBox", `0 0 ${width} ${height}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
+  mapSvg = svg;
 
   // Ocean background — stays outside the zoom group so it always fills
   svg.append("rect")
@@ -157,6 +188,8 @@ async function initMap() {
         this.dataset.iso2 = iso2;
         this.classList.add("in-set");
         pathByNumeric[+d.id] = this;
+        const country = window.COUNTRIES.find(c => c.iso2 === iso2);
+        if (country) featuresByContinent[country.continent].push(d);
       } else {
         const parentIso2 = TERRITORIES.find(t => t.id === +d.id)?.parentIso2;
         if (parentIso2) {
@@ -182,6 +215,10 @@ async function initMap() {
       .node();
 
     dotByIso2[iso2] = node;
+    featuresByContinent[country.continent].push({
+      type: "Feature",
+      geometry: { type: "Point", coordinates: [lon, lat] },
+    });
   }
 
   // Zoom behaviour
@@ -192,6 +229,7 @@ async function initMap() {
       mapGroup.attr("transform", event.transform);
       hideMapTooltip();
     });
+  mapZoom = zoom;
 
   svg.call(zoom);
 
@@ -217,6 +255,51 @@ async function initMap() {
   });
 }
 
+function focusMapOnContinent(mode) {
+  if (mode === "world") {
+    mapSvg.transition().duration(400).call(mapZoom.transform, d3.zoomIdentity);
+    return;
+  }
+
+  const features = featuresByContinent[mode];
+  if (!features || !features.length) return;
+
+  const projection = mapPathGen.projection();
+
+  // d3.geoBounds is antimeridian-aware (lon0 > lon1 signals the box wraps through ±180°,
+  // which real Oceania/Russia geometry does). A naive pixel path.bounds() over such a
+  // region falsely spans nearly the whole map width, since ±180° are opposite screen edges.
+  let [[lon0, lat0], [lon1, lat1]] = d3.geoBounds({ type: "FeatureCollection", features });
+  const wraps = lon0 > lon1;
+  const lonSpan = Math.max(wraps ? 360 - lon0 + lon1 : lon1 - lon0, 1);
+  const latSpan = Math.max(lat1 - lat0, 1);
+  let centLon = wraps ? lon0 + lonSpan / 2 : (lon0 + lon1) / 2;
+  if (centLon > 180) centLon -= 360;
+  const centLat = (lat0 + lat1) / 2;
+
+  // Measure local pixels-per-degree near the centroid instead of diffing pixel corners —
+  // a single centroid projection is well-defined even when the region itself wraps.
+  const EPS = 0.25;
+  const [xw, yw] = projection([centLon - EPS, centLat]);
+  const [xe, ye] = projection([centLon + EPS, centLat]);
+  const [xs, ys] = projection([centLon, centLat - EPS]);
+  const [xn, yn] = projection([centLon, centLat + EPS]);
+  const pxPerDegLon = Math.hypot(xe - xw, ye - yw) / (2 * EPS);
+  const pxPerDegLat = Math.hypot(xn - xs, yn - ys) / (2 * EPS);
+
+  const spanXpx = lonSpan * pxPerDegLon;
+  const spanYpx = latSpan * pxPerDegLat;
+  const scale = Math.max(1, Math.min(10, 0.85 / Math.max(spanXpx / mapWidth, spanYpx / mapHeight)));
+
+  const [cx, cy] = projection([centLon, centLat]);
+  const translate = [mapWidth / 2 - scale * cx, mapHeight / 2 - scale * cy];
+
+  mapSvg.transition().duration(500).call(
+    mapZoom.transform,
+    d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale)
+  );
+}
+
 function highlightCountry(iso2, cls) {
   const country = window.COUNTRIES.find(x => x.iso2 === iso2);
   if (!country) return;
@@ -229,8 +312,8 @@ function highlightCountry(iso2, cls) {
   for (const el of (pathsByParent[iso2] || [])) el.classList.add(cls);
 }
 
-function revealMissed(guessed) {
-  for (const country of window.COUNTRIES) {
+function revealMissed(guessed, targets) {
+  for (const country of targets) {
     if (!guessed.has(country.iso2)) {
       highlightCountry(country.iso2, "missed");
     }
@@ -238,13 +321,14 @@ function revealMissed(guessed) {
 }
 
 /* ── Table ── */
-function buildTable(language, guessed) {
+function buildTable(language, guessed, mode) {
   const str = STRINGS[language];
+  const columns = mode === "world" ? CONTINENTS : [mode];
   tableHeader.innerHTML = "";
   tableBody.innerHTML = "";
 
   // Header
-  for (const continent of CONTINENTS) {
+  for (const continent of columns) {
     const th = document.createElement("th");
     const guessedCount = [...guessed].filter(iso2 =>
       window.COUNTRIES.find(c => c.iso2 === iso2)?.continent === continent
@@ -257,11 +341,11 @@ function buildTable(language, guessed) {
   }
 
   // Pre-fill all cells in alphabetical order; hide unguessed ones
-  const maxRows = Math.max(...CONTINENTS.map(continent => continentCountries[continent].length));
+  const maxRows = Math.max(...columns.map(continent => continentCountries[continent].length));
   for (let i = 0; i < maxRows; i++) {
     const tr = tableBody.insertRow();
 
-    for (const continent of CONTINENTS) {
+    for (const continent of columns) {
       const country = continentCountries[continent][i];
       const td = tr.insertCell();
 
@@ -288,9 +372,10 @@ function buildTable(language, guessed) {
   }
 }
 
-function updateTableHeader(language, guessed) {
+function updateTableHeader(language, guessed, mode) {
   const str = STRINGS[language];
-  for (const continent of CONTINENTS) {
+  const columns = mode === "world" ? CONTINENTS : [mode];
+  for (const continent of columns) {
     const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
     if (!th) continue;
 
@@ -326,8 +411,8 @@ function revealInTable(iso2, isMissed = false) {
   else cell.classList.add("guessed-cell");
 }
 
-function revealMissedInTable(guessed) {
-  for (const country of window.COUNTRIES) {
+function revealMissedInTable(guessed, targets) {
+  for (const country of targets) {
     if (!guessed.has(country.iso2)) revealInTable(country.iso2, true);
   }
 }

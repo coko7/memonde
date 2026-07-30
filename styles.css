@@ -284,6 +284,18 @@ body {
 #feedback.duplicate { color: var(--text-dim); }
 #feedback.wrong { color: var(--missed); }
 
+.mode-select {
+  padding: 0.55rem 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.mode-select:disabled { opacity: 0.4; cursor: not-allowed; }
+
 button.primary {
   padding: 0.55rem 1.2rem;
   font-size: 0.95rem;
