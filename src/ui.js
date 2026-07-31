@@ -2,10 +2,12 @@
 const STRINGS = {
   en: {
     score: "Score",
+    scoreLabelShare: "Score:",
     world: "World",
+    mode: "Mode:",
     start: "Start",
     share: "Share",
-    copied: "Copied",
+    copied: "📋 Copied to clipboard ✓",
     copySummary: "Copy summary",
     giveUp: "Give Up",
     playAgain: "Play Again",
@@ -23,10 +25,12 @@ const STRINGS = {
   },
   fr: {
     score: "Score",
+    scoreLabelShare: "Score :",
     world: "Monde",
+    mode: "Mode :",
     start: "Démarrer",
     share: "Partager",
-    copied: "Copié",
+    copied: "📋 Copié dans le presse-papiers ✓",
     copySummary: "Copier le résumé",
     giveUp: "Abandonner",
     playAgain: "Rejouer",
@@ -63,6 +67,45 @@ const tableBody = document.getElementById("table-body");
 const btnShare = document.getElementById("btn-share");
 const btnCopySummary = document.getElementById("btn-copy-summary");
 const mapTooltipEl = document.getElementById("map-tooltip");
+const toastEl = document.getElementById("toast");
+const textPopupOverlay = document.getElementById("text-popup-overlay");
+const textPopupContent = document.getElementById("text-popup-content");
+const textPopupClose = document.getElementById("text-popup-close");
+
+/* ── Toast ── */
+let toastHideTimeoutId = null;
+let toastRemoveTimeoutId = null;
+
+function showToast(message) {
+  clearTimeout(toastHideTimeoutId);
+  clearTimeout(toastRemoveTimeoutId);
+
+  toastEl.textContent = message;
+  toastEl.hidden = false;
+  void toastEl.offsetWidth;
+  toastEl.classList.add("visible");
+
+  toastHideTimeoutId = setTimeout(() => {
+    toastEl.classList.remove("visible");
+    toastRemoveTimeoutId = setTimeout(() => { toastEl.hidden = true; }, 200);
+  }, 2000);
+}
+
+/* ── Text popup (share/summary) ── */
+function showTextPopup(text) {
+  textPopupContent.textContent = text;
+  textPopupOverlay.hidden = false;
+}
+function hideTextPopup() {
+  textPopupOverlay.hidden = true;
+}
+textPopupClose.addEventListener("click", hideTextPopup);
+textPopupOverlay.addEventListener("click", (e) => {
+  if (e.target === textPopupOverlay) hideTextPopup();
+});
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && !textPopupOverlay.hidden) hideTextPopup();
+});
 
 /* ── Mode select ── */
 function buildModeOptions(language, selectedMode) {

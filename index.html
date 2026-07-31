@@ -13,7 +13,7 @@
 
     <!-- Open Graph -->
     <meta property="og:type"        content="website" />
-    <meta property="og:title"       content="Memonde | World Guesser" />
+    <meta property="og:title"       content="MéMonde | World Guesser" />
     <meta property="og:description" content="A geography guessing game — name all 197 countries of the world in 15 minutes." />
     <meta property="og:image"       content="https://github.com/user-attachments/assets/a025b188-4be3-4ae3-8302-1fdf8f0d6405" />
     <meta property="og:image:width"  content="1280" />
@@ -22,7 +22,7 @@
 
     <!-- Twitter / X Card -->
     <meta name="twitter:card"        content="summary_large_image" />
-    <meta name="twitter:title"       content="Memonde | World Guesser" />
+    <meta name="twitter:title"       content="MéMonde | World Guesser" />
     <meta name="twitter:description" content="A geography guessing game — name all 197 countries of the world in 15 minutes." />
     <meta name="twitter:image"       content="https://github.com/user-attachments/assets/a025b188-4be3-4ae3-8302-1fdf8f0d6405" />
 
@@ -93,6 +93,17 @@
           </thead>
           <tbody id="table-body"></tbody>
         </table>
+      </div>
+    </div>
+
+    <!-- Toast notification -->
+    <div id="toast" hidden></div>
+
+    <!-- Share/summary text popup -->
+    <div id="text-popup-overlay" hidden>
+      <div id="text-popup" role="dialog" aria-modal="true">
+        <button id="text-popup-close" aria-label="Close">×</button>
+        <pre id="text-popup-content"></pre>
       </div>
     </div>
 

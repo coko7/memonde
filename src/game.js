@@ -42,7 +42,6 @@ let state = {
 };
 let indexes = null;
 let timerInterval = null;
-let shareTimeoutId = null;
 
 // Per-continent country lists (derived from COUNTRIES)
 const continentCountries = {}; // continent → [country]
@@ -268,8 +267,6 @@ function setLanguage(lang) {
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
   btnShare.textContent = STRINGS[lang].share;
   btnCopySummary.textContent = STRINGS[lang].copySummary;
-  clearTimeout(shareTimeoutId);
-  clearTimeout(copySummaryTimeoutId);
   buildModeOptions(lang, state.mode);
 
   if (state.status === "idle") {
@@ -283,18 +280,20 @@ function setLanguage(lang) {
 
 /* ── Share ── */
 async function shareScore() {
-  clearTimeout(shareTimeoutId);
-
   const lang = state.language;
-  const lines = [`🌍 Memonde — ${state.score} / ${state.total}`, ''];
-  lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`)
-  lines.push('');
+  const str = STRINGS[lang];
+  const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
+
+  const lines = ["🌍 MéMonde", ""];
+  lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
+  lines.push(`💯 ${str.mode} ${modeLabel}`);
+  lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
     const count = [...state.guessed].filter(
       iso2 => window.COUNTRIES.find(country => country.iso2 === iso2)?.continent === continent
     ).length;
-    lines.push(`- ${STRINGS[lang].continents[continent]}: ${count} / ${continentTotals[continent]}`);
+    lines.push(`- ${str.continents[continent]}: ${count} / ${continentTotals[continent]}`);
   }
 
   const text = lines.join("\n");
@@ -302,16 +301,14 @@ async function shareScore() {
 
   const fullText = `${text}\n${url}`;
 
+  showTextPopup(fullText);
+
   try {
     if (navigator.share) {
       await navigator.share({ text: fullText });
     } else {
       await navigator.clipboard.writeText(fullText);
-      btnShare.textContent = `✓ ${STRINGS[lang].copied}`;
-      shareTimeoutId = setTimeout(() => {
-        const lang = state.language;
-        btnShare.textContent = STRINGS[lang].share;
-      }, 2000);
+      showToast(str.copied);
     }
   } catch {
     // user cancelled or clipboard unavailable — silently ignore
@@ -319,16 +316,15 @@ async function shareScore() {
 }
 
 /* ── Copy summary ── */
-let copySummaryTimeoutId = null;
-
 async function copySummary() {
   const lang = state.language;
   const str = STRINGS[lang];
-  const lines = [`🌍 Memonde — ${state.score}/${state.total}`, ""];
-  if (state.remainingMs > 0) {
-    lines.push(`⏱ ${STRINGS[lang].timeRemaining} ${formatTime(state.remainingMs)}`, "");
-  }
+  const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
 
+  const lines = ["🌍 MéMonde", ""];
+  lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
+  lines.push(`💯 ${str.mode} ${modeLabel}`);
+  lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
     const countries = continentCountries[continent];
@@ -341,13 +337,12 @@ async function copySummary() {
     lines.push("");
   }
 
+  const fullText = lines.join("\n").trimEnd();
+  showTextPopup(fullText);
+
   try {
-    await navigator.clipboard.writeText(lines.join("\n").trimEnd());
-    clearTimeout(copySummaryTimeoutId);
-    btnCopySummary.textContent = `✓ ${str.copied}`;
-    copySummaryTimeoutId = setTimeout(() => {
-      btnCopySummary.textContent = STRINGS[state.language].copySummary;
-    }, 2000);
+    await navigator.clipboard.writeText(fullText);
+    showToast(str.copied);
   } catch {
     // clipboard unavailable — silently ignore
   }
