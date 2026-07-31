@@ -227,6 +227,11 @@ body {
   fill: var(--country-missed) !important;
   cursor: pointer !important;
 }
+#world-map .out-of-mode,
+#world-map .out-of-mode:hover {
+  fill: var(--country-not-in-set) !important;
+  cursor: default !important;
+}
 
 /* ── Input row ── */
 #input-row {
@@ -366,6 +371,10 @@ button.secondary:active { transform: scale(0.97); }
 
 #continent-table th.continent-done { color: var(--correct); }
 #continent-table th.continent-done .count { color: var(--correct); opacity: 0.7; }
+
+#continent-table th.col-disabled { color: var(--text-dim); opacity: 0.45; }
+#continent-table th.col-disabled .count { color: var(--text-dim); }
+#continent-table td.col-disabled { opacity: 0.4; }
 
 @keyframes continent-complete {
   0%   { transform: scale(1); }

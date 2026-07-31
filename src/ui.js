@@ -300,6 +300,14 @@ function focusMapOnContinent(mode) {
   );
 }
 
+function updateMapModeDimming(mode) {
+  document.querySelectorAll("#world-map path[data-iso2], #world-map circle.dot-marker").forEach(el => {
+    const country = window.COUNTRIES.find(c => c.iso2 === el.dataset.iso2);
+    const dim = mode !== "world" && country && country.continent !== mode;
+    el.classList.toggle("out-of-mode", dim);
+  });
+}
+
 function highlightCountry(iso2, cls) {
   const country = window.COUNTRIES.find(x => x.iso2 === iso2);
   if (!country) return;
@@ -323,7 +331,7 @@ function revealMissed(guessed, targets) {
 /* ── Table ── */
 function buildTable(language, guessed, mode) {
   const str = STRINGS[language];
-  const columns = mode === "world" ? CONTINENTS : [mode];
+  const columns = CONTINENTS;
   tableHeader.innerHTML = "";
   tableBody.innerHTML = "";
 
@@ -337,6 +345,7 @@ function buildTable(language, guessed, mode) {
     th.dataset.continent = continent;
 
     if (guessedCount === continentTotals[continent]) th.classList.add("continent-done");
+    if (mode !== "world" && continent !== mode) th.classList.add("col-disabled");
     tableHeader.appendChild(th);
   }
 
@@ -348,6 +357,7 @@ function buildTable(language, guessed, mode) {
     for (const continent of columns) {
       const country = continentCountries[continent][i];
       const td = tr.insertCell();
+      if (mode !== "world" && continent !== mode) td.classList.add("col-disabled");
 
       if (country) {
         td.dataset.iso2 = country.iso2;
@@ -374,8 +384,7 @@ function buildTable(language, guessed, mode) {
 
 function updateTableHeader(language, guessed, mode) {
   const str = STRINGS[language];
-  const columns = mode === "world" ? CONTINENTS : [mode];
-  for (const continent of columns) {
+  for (const continent of CONTINENTS) {
     const th = tableHeader.querySelector(`[data-continent="${continent}"]`);
     if (!th) continue;
 
@@ -384,6 +393,7 @@ function updateTableHeader(language, guessed, mode) {
     ).length;
     th.innerHTML = `${str.continents[continent]}<span class="count">${guessedCount}/${continentTotals[continent]}</span>`;
     th.classList.toggle("continent-done", guessedCount === continentTotals[continent]);
+    th.classList.toggle("col-disabled", mode !== "world" && continent !== mode);
   }
 }
 

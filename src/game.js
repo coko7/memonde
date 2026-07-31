@@ -92,6 +92,7 @@ function setMode(mode) {
   state.mode = mode;
   localStorage.setItem("mode", mode);
   updateIdlePreview();
+  updateMapModeDimming(mode);
 }
 
 /* ── Timer ── */
@@ -135,6 +136,7 @@ function startGame() {
   modeSelectEl.disabled = true;
 
   focusMapOnContinent(state.mode);
+  updateMapModeDimming(state.mode);
 
   timerInterval = setInterval(tickTimer, 500);
 }
@@ -188,6 +190,7 @@ function resetToIdle() {
     el.classList.remove("guessed", "missed");
   });
   focusMapOnContinent("world");
+  updateMapModeDimming(state.mode);
 
   buildTable(state.language, state.guessed, state.mode);
   updateIdlePreview();
@@ -389,6 +392,7 @@ btnCopySummary.addEventListener("click", copySummary);
   document.getElementById("btn-theme").textContent = theme === "dark" ? "☀️" : "🌙";
 
   await initMap();
+  updateMapModeDimming(state.mode);
   inputEl.placeholder = STRINGS[lang].inputPlaceholder;
   scoreLabelEl.textContent = STRINGS[lang].score;
   btnAction.textContent = STRINGS[lang].start;
