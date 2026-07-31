@@ -246,6 +246,7 @@ body {
 
 #input-wrap {
   flex: 1;
+  min-width: 0;
   position: relative;
 }
 
@@ -425,4 +426,13 @@ button.secondary:active { transform: scale(0.97); }
   #app { width: 100%; }
   #world-map { width: 600px; height: 250px; }
   #continent-table { min-width: 700px; }
+
+  #input-row {
+    flex-wrap: wrap;
+    padding: 0.6rem 0.75rem;
+    row-gap: 0.5rem;
+  }
+  #input-wrap {
+    flex-basis: 100%;
+  }
 }
