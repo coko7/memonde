@@ -36,10 +36,10 @@ let state = {
   mode: "world",          // "world" | one of CONTINENTS
   gameType: "countries",  // "countries" | "capitals"
   guessed: new Set(),
-  endTime: null,
+  startTime: null,
   score: 0,
   total: 197,
-  remainingMs: 0,   // set on win, 0 on timeout
+  elapsedMs: 0,     // frozen when the game ends
 };
 let indexes = null;
 let timerInterval = null;
@@ -59,18 +59,12 @@ for (const continent of CONTINENTS) {
   continentTotals[continent] = continentCountries[continent].length;
 }
 
-const WORLD_DURATION_MS = 15 * 60 * 1000;
-
 function getTargetCountries() {
   return state.mode === "world" ? window.COUNTRIES : continentCountries[state.mode];
 }
 
 function getPlayedContinents() {
   return state.mode === "world" ? CONTINENTS : [state.mode];
-}
-
-function computeDurationMs(total) {
-  return Math.round(total * WORLD_DURATION_MS / 197);
 }
 
 function isInMode(iso2) {
@@ -83,7 +77,7 @@ function updateIdlePreview() {
   state.total = total;
   scoreTargetEl.textContent = total;
   if (state.status !== "running") {
-    timerEl.textContent = formatTime(computeDurationMs(total));
+    timerEl.textContent = formatTime(0);
   }
 }
 
@@ -97,10 +91,7 @@ function setMode(mode) {
 
 /* ── Timer ── */
 function tickTimer() {
-  const remaining = state.endTime - Date.now();
-  timerEl.textContent = formatTime(remaining);
-  timerEl.classList.toggle("urgent", remaining < 60000);
-  if (remaining <= 0) endGame();
+  timerEl.textContent = formatTime(Date.now() - state.startTime);
 }
 
 /* ── Game actions ── */
@@ -109,7 +100,7 @@ function startGame() {
   state.guessed = new Set();
   state.score = 0;
   state.total = getTargetCountries().length;
-  state.endTime = Date.now() + computeDurationMs(state.total);
+  state.startTime = Date.now();
 
   indexes = buildIndexes(state.language, state.gameType === "capitals" ? "capital" : "name");
 
@@ -123,8 +114,7 @@ function startGame() {
   // UI
   scoreEl.textContent = "0";
   scoreTargetEl.textContent = state.total;
-  timerEl.classList.remove("urgent");
-  timerEl.textContent = formatTime(state.endTime - Date.now());
+  timerEl.textContent = formatTime(0);
   inputEl.parentElement.hidden = false;
   inputEl.disabled = false;
   inputEl.value = "";
@@ -143,15 +133,12 @@ function startGame() {
   timerInterval = setInterval(tickTimer, 500);
 }
 
-function endGame(won = false) {
+function endGame() {
   clearInterval(timerInterval);
   state.status = "ended";
-  state.remainingMs = won ? Math.max(0, state.endTime - Date.now()) : 0;
+  state.elapsedMs = Date.now() - state.startTime;
+  timerEl.textContent = formatTime(state.elapsedMs);
 
-  if (!won) {
-    timerEl.textContent = "00:00";
-    timerEl.classList.remove("urgent");
-  }
   inputEl.parentElement.hidden = true;
   inputEl.disabled = true;
   inputEl.value = "";
@@ -174,9 +161,8 @@ function resetToIdle() {
   state.status = "idle";
   state.guessed = new Set();
   state.score = 0;
-  state.endTime = null;
+  state.startTime = null;
 
-  timerEl.classList.remove("urgent");
   scoreEl.textContent = "0";
   inputEl.parentElement.hidden = true;
   inputEl.disabled = true;
@@ -226,7 +212,7 @@ function acceptGuess(iso2) {
     }
   }
 
-  if (state.score === state.total) endGame(true);
+  if (state.score === state.total) endGame();
 }
 
 function handleSubmit() {
@@ -320,7 +306,7 @@ async function shareScore() {
   lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
   lines.push(`💯 ${str.mode} ${modeLabel}`);
   lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
-  lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
+  lines.push(`⏱️ ${str.timeElapsed} ${formatTime(state.elapsedMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
     const count = [...state.guessed].filter(
@@ -363,7 +349,7 @@ async function copySummary() {
   lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
   lines.push(`💯 ${str.mode} ${modeLabel}`);
   lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
-  lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
+  lines.push(`⏱️ ${str.timeElapsed} ${formatTime(state.elapsedMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
     const countries = continentCountries[continent];

@@ -17,7 +17,7 @@ const STRINGS = {
     typeCapitals: "Capitals",
     gameTypeLabel: "Type:",
     alreadyGot: "already got it",
-    timeRemaining: "Remaining time:",
+    timeElapsed: "Time:",
     continents: {
       "Africa": "Africa",
       "Asia": "Asia",
@@ -44,7 +44,7 @@ const STRINGS = {
     typeCapitals: "Capitales",
     gameTypeLabel: "Type :",
     alreadyGot: "déjà trouvé",
-    timeRemaining: "Temps restant :",
+    timeElapsed: "Temps :",
     continents: {
       "Africa": "Afrique",
       "Asia": "Asie",
@@ -492,10 +492,11 @@ function revealMissedInTable(guessed, targets) {
 
 /* ── Timer ── */
 function formatTime(ms) {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  const m = Math.floor(total / 60).toString().padStart(2, "0");
+  const total = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60).toString().padStart(2, "0");
   const s = (total % 60).toString().padStart(2, "0");
-  return `${m}:${s}`;
+  return h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
 }
 
 /* ── Feedback ── */

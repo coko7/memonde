@@ -133,7 +133,6 @@ body {
   color: var(--accent);
   transition: color 0.3s;
 }
-#timer-display.urgent { color: var(--missed); }
 
 #score-display {
   font-weight: 600;
