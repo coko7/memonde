@@ -105,6 +105,27 @@ const ALIASES = {
   ZA: { en: ["Sth Africa", "S Africa"], fr: ["Afrique Sud", "Afrique S"] },
 };
 
+// Fixes for known-bad source data in the `capital` field (English)
+const CAPITAL_OVERRIDES = {
+  SG: "Singapore",  // source has the German spelling "Singapur"
+  LY: "Tripoli",    // source has the German spelling "Tripolis"
+};
+
+// French translations for capitals whose name differs from the English spelling.
+// Capitals not listed here use the same spelling in both languages.
+const CAPITAL_FR = {
+  AG: "Saint John's", AM: "Erevan", AT: "Vienne", AZ: "Bakou", BD: "Dacca",
+  BE: "Bruxelles", CH: "Berne", CN: "Pékin", CU: "La Havane", CY: "Nicosie",
+  DK: "Copenhague", DZ: "Alger", EG: "Le Caire", ET: "Addis-Abeba", GB: "Londres",
+  GD: "Saint-Georges", GE: "Tbilissi", GR: "Athènes", GT: "Guatemala", IQ: "Bagdad",
+  KW: "Koweït", LB: "Beyrouth", LY: "Tripoli", MN: "Oulan-Bator", MT: "La Valette",
+  MU: "Port-Louis", MX: "Mexico", NP: "Katmandou", OM: "Mascate", PA: "Panama",
+  PH: "Manille", PL: "Varsovie", PS: "Jérusalem-Est", PT: "Lisbonne", RO: "Bucarest",
+  RU: "Moscou", SA: "Riyad", SG: "Singapour", SO: "Mogadiscio", SY: "Damas",
+  TM: "Achgabat", TT: "Port-d'Espagne", UA: "Kiev", UZ: "Tachkent", VA: "Cité du Vatican",
+  VN: "Hanoï",
+};
+
 function continentOf(c) {
   // Because "South America" and "North America" are not regions but subregions
   if (c.region === "Americas")
@@ -118,6 +139,7 @@ const out = raw
   .map(country => {
     // If the country has an override, we use it:
     const override = OVERRIDES[country.iso2] || {};
+    const capitalEn = CAPITAL_OVERRIDES[country.iso2] ?? country.capital;
     return {
       iso2: country.iso2,
       numeric: parseInt(country.numeric_code, 10),
@@ -125,6 +147,10 @@ const out = raw
       name: {
         en: override.en ?? country.name,
         fr: override.fr ?? (country.translations?.fr || country.name),
+      },
+      capital: {
+        en: capitalEn,
+        fr: CAPITAL_FR[country.iso2] ?? capitalEn,
       },
       aliases: ALIASES[country.iso2] || { en: [], fr: [] },
     };
@@ -135,6 +161,16 @@ if (out.length !== 197) throw new Error(`Expected 197, got ${out.length}`);
 for (const country of out) {
   if (!country.name.en) throw new Error(`Missing EN name for ${country.iso2}`);
   if (!country.name.fr) throw new Error(`Missing FR name for ${country.iso2}`);
+  if (!country.capital.en) throw new Error(`Missing EN capital for ${country.iso2}`);
+  if (!country.capital.fr) throw new Error(`Missing FR capital for ${country.iso2}`);
+}
+for (const lang of ["en", "fr"]) {
+  const seen = new Set();
+  for (const country of out) {
+    const capital = country.capital[lang];
+    if (seen.has(capital)) throw new Error(`Duplicate ${lang} capital "${capital}" (${country.iso2})`);
+    seen.add(capital);
+  }
 }
 
 // Compute number of countries per continent

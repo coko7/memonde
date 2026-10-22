@@ -12,6 +12,10 @@ const STRINGS = {
     giveUp: "Give Up",
     playAgain: "Play Again",
     inputPlaceholder: "Type a country…",
+    inputPlaceholderCapital: "Type a capital…",
+    typeCountries: "Countries",
+    typeCapitals: "Capitals",
+    gameTypeLabel: "Type:",
     alreadyGot: "already got it",
     timeRemaining: "Remaining time:",
     continents: {
@@ -35,6 +39,10 @@ const STRINGS = {
     giveUp: "Abandonner",
     playAgain: "Rejouer",
     inputPlaceholder: "Tapez un pays…",
+    inputPlaceholderCapital: "Tapez une capitale…",
+    typeCountries: "Pays",
+    typeCapitals: "Capitales",
+    gameTypeLabel: "Type :",
     alreadyGot: "déjà trouvé",
     timeRemaining: "Temps restant :",
     continents: {
@@ -59,6 +67,8 @@ const feedbackEl = document.getElementById("feedback");
 const btnAction = document.getElementById("btn-action");
 const btnEn = document.getElementById("btn-en");
 const btnFr = document.getElementById("btn-fr");
+const btnTypeCountry = document.getElementById("btn-type-country");
+const btnTypeCapital = document.getElementById("btn-type-capital");
 const modeSelectEl = document.getElementById("mode-select");
 const scoreTargetEl = document.getElementById("score-target");
 const continentTableEl = document.getElementById("continent-table");
@@ -372,7 +382,7 @@ function revealMissed(guessed, targets) {
 }
 
 /* ── Table ── */
-function buildTable(language, guessed, mode) {
+function buildTable(language, guessed, mode, gameType) {
   const str = STRINGS[language];
   const columns = CONTINENTS;
   tableHeader.innerHTML = "";
@@ -403,16 +413,26 @@ function buildTable(language, guessed, mode) {
       if (mode !== "world" && continent !== mode) td.classList.add("col-disabled");
 
       if (country) {
-        td.dataset.iso2 = country.iso2;
-        td.dataset.locacaleName = country.name[language];
-        td.textContent = country.name[language];
-        const aliases = country.aliases[language] || [];
+        const isCapitals = gameType === "capitals";
+        const primary = isCapitals ? country.capital[language] : country.name[language];
 
-        if (aliases.length) {
+        td.dataset.iso2 = country.iso2;
+        td.dataset.locacaleName = primary;
+        td.textContent = primary;
+
+        if (isCapitals) {
           const small = document.createElement("small");
           small.className = "cell-aliases";
-          small.textContent = aliases.filter(a => a !== country.name[language]).join(", ");
+          small.textContent = country.name[language];
           td.appendChild(small);
+        } else {
+          const aliases = country.aliases[language] || [];
+          if (aliases.length) {
+            const small = document.createElement("small");
+            small.className = "cell-aliases";
+            small.textContent = aliases.filter(a => a !== country.name[language]).join(", ");
+            td.appendChild(small);
+          }
         }
 
         if (guessed.has(country.iso2)) {
