@@ -60,21 +60,23 @@ function levenshtein(a, b) {
 }
 
 
-function buildIndexes(lang) {
+function buildIndexes(lang, field = "name") {
   const exactIndex = new Map(); // normName → iso2
   const fuzzyList = [];         // [{iso2, n}]
 
   for (const country of window.COUNTRIES) {
-    const name = country.name[lang];
+    const name = country[field][lang];
     const canonicalName = normalize(name);
     exactIndex.set(canonicalName, country.iso2);
     fuzzyList.push({
       iso2: country.iso2,
       name: canonicalName,
-      display: name
+      // Confusable-family guard only applies to country names — capitals
+      // have no family data, so leave display blank to keep the guard inert.
+      display: field === "name" ? name : ""
     });
 
-    const aliases = country.aliases[lang] || [];
+    const aliases = field === "name" ? (country.aliases[lang] || []) : [];
     for (const alias of aliases) {
       const canonicalAlias = normalize(alias);
       if (!exactIndex.has(canonicalAlias)) {

@@ -33,7 +33,8 @@ function inSameFamily(a, b) {
 let state = {
   status: "idle",   // idle | running | ended
   language: "en",
-  mode: "world",    // "world" | one of CONTINENTS
+  mode: "world",          // "world" | one of CONTINENTS
+  gameType: "countries",  // "countries" | "capitals"
   guessed: new Set(),
   endTime: null,
   score: 0,
@@ -110,14 +111,14 @@ function startGame() {
   state.total = getTargetCountries().length;
   state.endTime = Date.now() + computeDurationMs(state.total);
 
-  indexes = buildIndexes(state.language);
+  indexes = buildIndexes(state.language, state.gameType === "capitals" ? "capital" : "name");
 
   // Reset map
   document.querySelectorAll("#world-map path, #world-map circle.dot-marker").forEach(el => {
     el.classList.remove("guessed", "missed");
   });
 
-  buildTable(state.language, state.guessed, state.mode);
+  buildTable(state.language, state.guessed, state.mode, state.gameType);
 
   // UI
   scoreEl.textContent = "0";
@@ -132,6 +133,8 @@ function startGame() {
   btnAction.classList.add("danger");
   btnEn.disabled = true;
   btnFr.disabled = true;
+  btnTypeCountry.disabled = true;
+  btnTypeCapital.disabled = true;
   modeSelectEl.disabled = true;
 
   focusMapOnContinent(state.mode);
@@ -156,6 +159,8 @@ function endGame(won = false) {
   btnAction.classList.remove("danger");
   btnEn.disabled = false;
   btnFr.disabled = false;
+  btnTypeCountry.disabled = false;
+  btnTypeCapital.disabled = false;
   modeSelectEl.disabled = false;
 
   const targets = getTargetCountries();
@@ -180,6 +185,8 @@ function resetToIdle() {
   btnAction.classList.remove("danger");
   btnEn.disabled = false;
   btnFr.disabled = false;
+  btnTypeCountry.disabled = false;
+  btnTypeCapital.disabled = false;
   modeSelectEl.disabled = false;
   btnShare.hidden = true;
   btnCopySummary.hidden = true;
@@ -191,7 +198,7 @@ function resetToIdle() {
   focusMapOnContinent("world");
   updateMapModeDimming(state.mode);
 
-  buildTable(state.language, state.guessed, state.mode);
+  buildTable(state.language, state.guessed, state.mode, state.gameType);
   updateIdlePreview();
 }
 
@@ -264,7 +271,11 @@ function setLanguage(lang) {
   btnFr.classList.toggle("active", lang === "fr");
 
   scoreLabelEl.textContent = STRINGS[lang].score;
-  inputEl.placeholder = STRINGS[lang].inputPlaceholder;
+  inputEl.placeholder = state.gameType === "capitals"
+    ? STRINGS[lang].inputPlaceholderCapital
+    : STRINGS[lang].inputPlaceholder;
+  btnTypeCountry.textContent = STRINGS[lang].typeCountries;
+  btnTypeCapital.textContent = STRINGS[lang].typeCapitals;
   btnShare.textContent = STRINGS[lang].share;
   btnCopySummary.textContent = STRINGS[lang].copySummary;
   buildModeOptions(lang, state.mode);
@@ -273,7 +284,26 @@ function setLanguage(lang) {
     btnAction.textContent = STRINGS[lang].start;
   } else if (state.status === "ended") {
     btnAction.textContent = STRINGS[lang].playAgain;
-    buildTable(state.language, state.guessed, state.mode);
+    buildTable(state.language, state.guessed, state.mode, state.gameType);
+    revealMissedInTable(state.guessed, getTargetCountries());
+  }
+}
+
+/* ── Game type toggle ── */
+function setGameType(type) {
+  if (state.status === "running") return;
+
+  state.gameType = type;
+  localStorage.setItem("gameType", type);
+  btnTypeCountry.classList.toggle("active", type === "countries");
+  btnTypeCapital.classList.toggle("active", type === "capitals");
+
+  inputEl.placeholder = type === "capitals"
+    ? STRINGS[state.language].inputPlaceholderCapital
+    : STRINGS[state.language].inputPlaceholder;
+
+  if (state.status === "ended") {
+    buildTable(state.language, state.guessed, state.mode, state.gameType);
     revealMissedInTable(state.guessed, getTargetCountries());
   }
 }
@@ -284,9 +314,12 @@ async function shareScore() {
   const str = STRINGS[lang];
   const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
 
+  const typeLabel = state.gameType === "capitals" ? str.typeCapitals : str.typeCountries;
+
   const lines = ["🌍 MéMonde", ""];
   lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
   lines.push(`💯 ${str.mode} ${modeLabel}`);
+  lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
   lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
@@ -321,9 +354,15 @@ async function copySummary() {
   const str = STRINGS[lang];
   const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
 
+  const typeLabel = state.gameType === "capitals" ? str.typeCapitals : str.typeCountries;
+  const labelOf = state.gameType === "capitals"
+    ? c => `${c.capital[lang]} (${c.name[lang]})`
+    : c => c.name[lang];
+
   const lines = ["🌍 MéMonde", ""];
   lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
   lines.push(`💯 ${str.mode} ${modeLabel}`);
+  lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
   lines.push(`⏲️ ${str.timeRemaining} ${formatTime(state.remainingMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
@@ -332,8 +371,8 @@ async function copySummary() {
     const missed = countries.filter(c => !state.guessed.has(c.iso2));
 
     lines.push(`${str.continents[continent]} (${guessed.length}/${countries.length})`);
-    if (guessed.length) lines.push(`  ✅ ${guessed.map(c => c.name[lang]).join(", ")}`);
-    if (missed.length) lines.push(`  ❌ ${missed.map(c => c.name[lang]).join(", ")}`);
+    if (guessed.length) lines.push(`  ✅ ${guessed.map(labelOf).join(", ")}`);
+    if (missed.length) lines.push(`  ❌ ${missed.map(labelOf).join(", ")}`);
     lines.push("");
   }
 
@@ -362,6 +401,8 @@ inputEl.addEventListener("input", handleInput);
 
 btnEn.addEventListener("click", () => setLanguage("en"));
 btnFr.addEventListener("click", () => setLanguage("fr"));
+btnTypeCountry.addEventListener("click", () => setGameType("countries"));
+btnTypeCapital.addEventListener("click", () => setGameType("capitals"));
 modeSelectEl.addEventListener("change", () => setMode(modeSelectEl.value));
 
 document.getElementById("btn-theme").addEventListener("click", toggleTheme);
@@ -382,13 +423,23 @@ btnCopySummary.addEventListener("click", copySummary);
   state.mode = CONTINENTS.includes(savedMode) ? savedMode : "world";
   buildModeOptions(lang, state.mode);
 
+  // Game type: saved preference → default 'countries'
+  const savedGameType = localStorage.getItem("gameType");
+  state.gameType = savedGameType === "capitals" ? "capitals" : "countries";
+  btnTypeCountry.classList.toggle("active", state.gameType === "countries");
+  btnTypeCapital.classList.toggle("active", state.gameType === "capitals");
+
   // Sync theme button icon with the theme applied by the inline <head> script
   const theme = document.documentElement.dataset.theme || "light";
   document.getElementById("btn-theme").textContent = theme === "dark" ? "☀️" : "🌙";
 
   await initMap();
   updateMapModeDimming(state.mode);
-  inputEl.placeholder = STRINGS[lang].inputPlaceholder;
+  inputEl.placeholder = state.gameType === "capitals"
+    ? STRINGS[lang].inputPlaceholderCapital
+    : STRINGS[lang].inputPlaceholder;
+  btnTypeCountry.textContent = STRINGS[lang].typeCountries;
+  btnTypeCapital.textContent = STRINGS[lang].typeCapitals;
   scoreLabelEl.textContent = STRINGS[lang].score;
   btnAction.textContent = STRINGS[lang].start;
   btnShare.textContent = STRINGS[lang].share;
