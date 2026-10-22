@@ -54,6 +54,15 @@ for (const continent of CONTINENTS) {
   continentCountries[continent].sort((a, b) => a.name.en.localeCompare(b.name.en));
 }
 
+const CONTINENT_EMOJIS = {
+  "Africa": "🌍",
+  "Europe": "🌍",
+  "Asia": "🌏",
+  "Oceania": "🌏",
+  "North America": "🌎",
+  "South America": "🌎",
+};
+
 const continentTotals = {}; // continent → total
 for (const continent of CONTINENTS) {
   continentTotals[continent] = continentCountries[continent].length;
@@ -301,18 +310,19 @@ async function shareScore() {
   const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
 
   const typeLabel = state.gameType === "capitals" ? str.typeCapitals : str.typeCountries;
+  const typeEmoji = state.gameType === "capitals" ? "🏛️" : "🚩";
 
   const lines = ["🌍 MéMonde", ""];
-  lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
-  lines.push(`💯 ${str.mode} ${modeLabel}`);
-  lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
+  lines.push(`🎯 ${str.scoreLabelShare} ${state.score}/${state.total}`);
+  lines.push(`🧭 ${str.mode} ${modeLabel}`);
+  lines.push(`${typeEmoji} ${str.gameTypeLabel} ${typeLabel}`);
   lines.push(`⏱️ ${str.timeElapsed} ${formatTime(state.elapsedMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
     const count = [...state.guessed].filter(
       iso2 => window.COUNTRIES.find(country => country.iso2 === iso2)?.continent === continent
     ).length;
-    lines.push(`- ${str.continents[continent]}: ${count} / ${continentTotals[continent]}`);
+    lines.push(`${CONTINENT_EMOJIS[continent]} ${str.continents[continent]}: ${count} / ${continentTotals[continent]}`);
   }
 
   const text = lines.join("\n");
@@ -341,14 +351,15 @@ async function copySummary() {
   const modeLabel = state.mode === "world" ? str.world : str.continents[state.mode];
 
   const typeLabel = state.gameType === "capitals" ? str.typeCapitals : str.typeCountries;
+  const typeEmoji = state.gameType === "capitals" ? "🏛️" : "🚩";
   const labelOf = state.gameType === "capitals"
     ? c => `${c.capital[lang]} (${c.name[lang]})`
     : c => c.name[lang];
 
   const lines = ["🌍 MéMonde", ""];
-  lines.push(`🗺️ ${str.scoreLabelShare} ${state.score}/${state.total}`);
-  lines.push(`💯 ${str.mode} ${modeLabel}`);
-  lines.push(`🏛️ ${str.gameTypeLabel} ${typeLabel}`);
+  lines.push(`🎯 ${str.scoreLabelShare} ${state.score}/${state.total}`);
+  lines.push(`🧭 ${str.mode} ${modeLabel}`);
+  lines.push(`${typeEmoji} ${str.gameTypeLabel} ${typeLabel}`);
   lines.push(`⏱️ ${str.timeElapsed} ${formatTime(state.elapsedMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
@@ -356,7 +367,7 @@ async function copySummary() {
     const guessed = countries.filter(c => state.guessed.has(c.iso2));
     const missed = countries.filter(c => !state.guessed.has(c.iso2));
 
-    lines.push(`${str.continents[continent]} (${guessed.length}/${countries.length})`);
+    lines.push(`${CONTINENT_EMOJIS[continent]} ${str.continents[continent]} (${guessed.length}/${countries.length})`);
     if (guessed.length) lines.push(`  ✅ ${guessed.map(labelOf).join(", ")}`);
     if (missed.length) lines.push(`  ❌ ${missed.map(labelOf).join(", ")}`);
     lines.push("");

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-MéMonde — a single-page, no-backend browser game where the player types country names to guess all 197 countries of the world within a 15-minute timer. Lives at https://coko7.github.io/memonde, deployed via GitHub Pages (`.github/workflows/`) on every push to `main`.
+MéMonde — a single-page, no-backend browser game where the player types country names to guess all 197 countries of the world as fast as possible (count-up timer, no time limit). Lives at https://coko7.github.io/memonde, deployed via GitHub Pages (`.github/workflows/`) on every push to `main`.
 
 ## Commands
 
@@ -54,7 +54,7 @@ Indexes are rebuilt whenever the language toggles (EN/FR are fully separate acce
 
 ### Game state machine (`src/game.js`)
 
-`idle → running → ended → idle`. Language toggle is locked during `running` (a round is played in one language). Timer is driven by `endTime - Date.now()` (not a decrementing counter) so tab throttling doesn't cause drift. `state.guessed` is a `Set<iso2>` — the single source of truth for score, map highlighting, and table fill-in.
+`idle → running → ended → idle`. Language toggle is locked during `running` (a round is played in one language). Timer counts up, driven by `Date.now() - startTime` (not an incrementing counter) so tab throttling doesn't cause drift. No time limit — a round ends only on completion or Give Up; `elapsedMs` is frozen at end and used in share text. `state.guessed` is a `Set<iso2>` — the single source of truth for score, map highlighting, and table fill-in.
 
 ### Map (`src/ui.js`)
 

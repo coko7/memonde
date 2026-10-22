@@ -2,7 +2,7 @@
 
 <img width="1714" height="1037" alt="banner" src="https://github.com/user-attachments/assets/a025b188-4be3-4ae3-8302-1fdf8f0d6405" />
 
-A single-page browser game where you try to name all 197 countries of the world within 15 minutes.
+A single-page browser game where you try to name all 197 countries of the world as fast as you can.
 Type a country name, hit Enter, and watch it light up on the map. See how many you can get before time runs out.
 
 ## ✨ Features
