@@ -37,7 +37,9 @@ Source data is `dr5hn/countries-states-cities-database`'s `countries.json` (250 
 4. Derives `continent` from the dataset's `region`, except `region === "Americas"` is split by `subregion` (`South America` vs everything else → `North America`).
 5. Asserts `out.length === 197` and that every entry has non-empty EN/FR names before writing `data/countries.js`.
 
-Each emitted country record: `{ iso2, numeric, continent, name: {en, fr}, aliases: {en: [], fr: []} }`. `numeric` is the ISO 3166-1 numeric code, used to join against the TopoJSON world map (`feature.id === country.numeric`).
+Capitals follow the same pattern: `CAPITAL_OVERRIDES` fixes the source's English capital, `CAPITAL_FR` holds the French name for all 197 (the source has no capital translations, so this is hand-maintained and has no fallback), and `CAPITAL_ALIASES` lists accepted alternates (variant spellings, secondary capitals like La Paz or Cape Town). The build fails on any capital/alias that collides after `normalize()`-style folding.
+
+Each emitted country record: `{ iso2, numeric, continent, name: {en, fr}, capital: {en, fr}, aliases: {en: [], fr: []}, capitalAliases: {en: [], fr: []} }`. `numeric` is the ISO 3166-1 numeric code, used to join against the TopoJSON world map (`feature.id === country.numeric`).
 
 When adding/adjusting a country's accepted names, edit `ALIASES`/`OVERRIDES` in `tools/build-data.mjs` and re-run it — never hand-edit `data/countries.js`.
 

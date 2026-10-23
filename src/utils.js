@@ -76,7 +76,7 @@ function buildIndexes(lang, field = "name") {
       display: field === "name" ? name : ""
     });
 
-    const aliases = field === "name" ? (country.aliases[lang] || []) : [];
+    const aliases = (field === "name" ? country.aliases : country.capitalAliases)[lang] || [];
     for (const alias of aliases) {
       const canonicalAlias = normalize(alias);
       if (!exactIndex.has(canonicalAlias)) {
@@ -86,7 +86,7 @@ function buildIndexes(lang, field = "name") {
       fuzzyList.push({
         iso2: country.iso2,
         name: canonicalAlias,
-        display: name
+        display: field === "name" ? name : ""
       });
     }
   }
