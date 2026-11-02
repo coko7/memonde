@@ -233,14 +233,16 @@ function handleSubmit() {
   const result = matchInput(raw, indexes, state.guessed);
 
   if (!result || result.type === "nomatch") { showFeedback("?", "wrong"); return; }
-  if (result.type === "correct" && !isInMode(result.iso2)) { showFeedback("?", "wrong"); return; }
+
+  const iso2s = result.iso2s.filter(isInMode);
+  if (result.type === "correct" && !iso2s.length) { showFeedback("?", "wrong"); return; }
   if (result.type === "duplicate") {
     inputEl.value = "";
     showFeedback(STRINGS[state.language].alreadyGot, "duplicate");
     return;
   }
 
-  acceptGuess(result.iso2);
+  for (const iso2 of iso2s) acceptGuess(iso2);
 }
 
 function handleInput() {
@@ -250,10 +252,9 @@ function handleInput() {
   if (!raw.trim() || raw.length < 3) return;
 
   // Auto-submit on exact match only (alias or canonical name), not fuzzy
-  const iso2 = indexes.exactIndex.get(normalize(raw));
-  if (iso2 && !state.guessed.has(iso2) && isInMode(iso2)) {
-    acceptGuess(iso2);
-  }
+  const iso2s = (indexes.exactIndex.get(normalize(raw)) || [])
+    .filter(iso2 => !state.guessed.has(iso2) && isInMode(iso2));
+  for (const iso2 of iso2s) acceptGuess(iso2);
 }
 
 /* ── Language toggle ── */

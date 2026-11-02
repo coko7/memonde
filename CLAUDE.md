@@ -37,7 +37,7 @@ Source data is `dr5hn/countries-states-cities-database`'s `countries.json` (250 
 4. Derives `continent` from the dataset's `region`, except `region === "Americas"` is split by `subregion` (`South America` vs everything else → `North America`).
 5. Asserts `out.length === 197` and that every entry has non-empty EN/FR names before writing `data/countries.js`.
 
-Capitals follow the same pattern: `CAPITAL_OVERRIDES` fixes the source's English capital, `CAPITAL_FR` holds the French name for all 197 (the source has no capital translations, so this is hand-maintained and has no fallback), and `CAPITAL_ALIASES` lists accepted alternates (variant spellings, secondary capitals like La Paz or Cape Town). The build fails on any capital/alias that collides after `normalize()`-style folding.
+Capitals follow the same pattern: `CAPITAL_OVERRIDES` fixes the source's English capital, `CAPITAL_FR` holds the French name for all 197 (the source has no capital translations, so this is hand-maintained and has no fallback), and `CAPITAL_ALIASES` lists accepted alternates (variant spellings, secondary capitals like La Paz or Cape Town). The build fails on any capital/alias that collides after `normalize()`-style folding, except canonical capitals of countries grouped in `SHARED_CAPITALS` (Israel and Palestine both have Jerusalem).
 
 Each emitted country record: `{ iso2, numeric, continent, name: {en, fr}, capital: {en, fr}, aliases: {en: [], fr: []}, capitalAliases: {en: [], fr: []} }`. `numeric` is the ISO 3166-1 numeric code, used to join against the TopoJSON world map (`feature.id === country.numeric`).
 
@@ -48,7 +48,7 @@ When adding/adjusting a country's accepted names, edit `ALIASES`/`OVERRIDES` in 
 Input matching order, per keystroke/submit:
 
 1. **Normalize** both input and candidates: lowercase, strip accents (NFD + combining marks), punctuation → space, collapse whitespace.
-2. **Exact match** against `exactIndex` (canonical names + aliases, built per-language via `buildIndexes(lang)`).
+2. **Exact match** against `exactIndex` (canonical names + aliases, built per-language via `buildIndexes(lang)`). It maps each name to an array of iso2s: a shared capital lists several, and one answer credits every not-yet-guessed country on it (`matchInput` returns them as `iso2s`).
 3. **Fuzzy fallback** (only if no exact hit): Levenshtein distance ≤ 1 (strings ≤6 chars) or ≤ 2 (longer), against `fuzzyList`.
 4. **Confusable guard**: a fuzzy candidate is rejected if the input is *also* within threshold of a different country sharing a "confusable family" with it (families are in `game.js`'s `CONFUSABLE_FAMILIES`, e.g. Iran/Iraq, Niger/Nigeria, the Guineas, Sudan/South Sudan). Multiple surviving fuzzy candidates → reject as no-match. Exact matches always bypass the guard.
 

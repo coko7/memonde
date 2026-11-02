@@ -61,13 +61,13 @@ function levenshtein(a, b) {
 
 
 function buildIndexes(lang, field = "name") {
-  const exactIndex = new Map(); // normName → iso2
+  const exactIndex = new Map(); // normName → [iso2] (several when countries share a capital)
   const fuzzyList = [];         // [{iso2, n}]
 
   for (const country of window.COUNTRIES) {
     const name = country[field][lang];
     const canonicalName = normalize(name);
-    exactIndex.set(canonicalName, country.iso2);
+    exactIndex.set(canonicalName, [...(exactIndex.get(canonicalName) || []), country.iso2]);
     fuzzyList.push({
       iso2: country.iso2,
       name: canonicalName,
@@ -80,7 +80,7 @@ function buildIndexes(lang, field = "name") {
     for (const alias of aliases) {
       const canonicalAlias = normalize(alias);
       if (!exactIndex.has(canonicalAlias)) {
-        exactIndex.set(canonicalAlias, country.iso2);
+        exactIndex.set(canonicalAlias, [country.iso2]);
       }
 
       fuzzyList.push({
@@ -94,6 +94,14 @@ function buildIndexes(lang, field = "name") {
   return { exactIndex, fuzzyList };
 }
 
+// Several iso2s means countries sharing one name: only those not yet guessed are credited.
+function matchResult(iso2s, guessed) {
+  const fresh = iso2s.filter(iso2 => !guessed.has(iso2));
+  return fresh.length
+    ? { iso2: fresh[0], iso2s: fresh, type: "correct" }
+    : { iso2: iso2s[0], iso2s, type: "duplicate" };
+}
+
 function matchInput(raw, indexes, guessed) {
   if (!raw.trim()) return null;
 
@@ -102,11 +110,7 @@ function matchInput(raw, indexes, guessed) {
 
   // 1. Test for Exact match
   if (exactIndex.has(normalizedInput)) {
-    const iso2 = exactIndex.get(normalizedInput);
-    return {
-      iso2,
-      type: guessed.has(iso2) ? "duplicate" : "correct"
-    };
+    return matchResult(exactIndex.get(normalizedInput), guessed);
   }
 
   // 2. Test via Fuzzy match
@@ -141,10 +145,12 @@ function matchInput(raw, indexes, guessed) {
       return { iso2: null, type: "nomatch" };
     }
 
-    return {
-      iso2: candidate.iso2,
-      type: guessed.has(candidate.iso2) ? "duplicate" : "correct"
-    };
+    return matchResult([candidate.iso2], guessed);
+  }
+
+  // Multiple candidates all matching the same shared name (e.g. Jerusalem) → credit them all
+  if (new Set(candidates.map(candidate => candidate.name)).size === 1) {
+    return matchResult(unique.map(candidate => candidate.iso2), guessed);
   }
 
   // Multiple candidates → reject

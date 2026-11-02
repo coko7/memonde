@@ -124,6 +124,7 @@ const CAPITAL_OVERRIDES = {
   MD: "Chișinău",
   IS: "Reykjavík",
   YE: "Sana'a",
+  PS: "Jerusalem",
 };
 
 // French name of every capital. Must cover all 197 countries (asserted below).
@@ -147,7 +148,7 @@ const CAPITAL_FR = {
   IL: "Jérusalem", JP: "Tokyo", JO: "Amman", KZ: "Astana", KW: "Koweït",
   KG: "Bichkek", LA: "Vientiane", LB: "Beyrouth", MY: "Kuala Lumpur", MV: "Malé",
   MN: "Oulan-Bator", MM: "Naypyidaw", NP: "Katmandou", KP: "Pyongyang", OM: "Mascate",
-  PK: "Islamabad", PS: "Jérusalem-Est", PH: "Manille", QA: "Doha", SA: "Riyad",
+  PK: "Islamabad", PS: "Jérusalem", PH: "Manille", QA: "Doha", SA: "Riyad",
   SG: "Singapour", KR: "Séoul", LK: "Colombo", SY: "Damas", TW: "Taipei",
   TJ: "Douchanbé", TH: "Bangkok", TL: "Dili", TR: "Ankara", TM: "Achgabat",
   AE: "Abou Dabi", UZ: "Tachkent", VN: "Hanoï", YE: "Sanaa",
@@ -177,6 +178,11 @@ const CAPITAL_FR = {
   SB: "Honiara", TO: "Nuku'alofa", TV: "Funafuti", VU: "Port-Vila",
 };
 
+// Countries that share one capital. Naming it credits all of them in one go.
+const SHARED_CAPITALS = [
+  ["IL", "PS"], // Jerusalem
+];
+
 // Accepted alternate spellings for capitals, per language. Also covers countries
 // with several capitals (seat of government, judicial capital, former capital…).
 const CAPITAL_ALIASES = {
@@ -193,7 +199,8 @@ const CAPITAL_ALIASES = {
   MY: { en: ["Putrajaya"], fr: ["Putrajaya"] },
   LK: { en: ["Sri Jayawardenepura Kotte", "Kotte"], fr: ["Sri Jayawardenepura Kotte", "Kotte"] },
   SZ: { en: ["Lobamba"], fr: ["Lobamba"] },
-  PS: { en: ["Ramallah"], fr: ["Ramallah"] },
+  PS: { en: ["East Jerusalem", "Ramallah"], fr: ["Jérusalem-Est", "Ramallah"] },
+  IL: { en: ["Tel Aviv", "Tel Aviv-Yafo"], fr: ["Tel Aviv", "Tel Aviv-Jaffa"] },
   MX: { en: ["Ciudad de México"], fr: ["Ciudad de México"] },
   GT: { en: ["Guatemala"], fr: ["Ciudad de Guatemala"] },
   PA: { en: ["Panama"], fr: [] },
@@ -264,6 +271,9 @@ for (const lang of ["en", "fr"]) {
       const key = capital.toLowerCase().normalize("NFD").replace(/[^a-z0-9]/g, "");
       if (seen.has(key)) {
         const owner = seen.get(key);
+        const shared = capital === country.capital[lang]
+          && SHARED_CAPITALS.some(group => group.includes(owner) && group.includes(country.iso2));
+        if (shared) continue;
         throw new Error(owner === country.iso2
           ? `Redundant ${lang} capital alias "${capital}" (${country.iso2})`
           : `Duplicate ${lang} capital "${capital}" (${country.iso2}, ${owner})`);
