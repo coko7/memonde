@@ -402,19 +402,27 @@ function buildTable(language, guessed, mode, gameType) {
     tableHeader.appendChild(th);
   }
 
+  // Sort each column by the label it displays (capital or country name, in the current language)
+  const isCapitals = gameType === "capitals";
+  const labelOf = country => isCapitals ? country.capital[language] : country.name[language];
+  const sortedCountries = {};
+  for (const continent of columns) {
+    sortedCountries[continent] = [...continentCountries[continent]]
+      .sort((a, b) => labelOf(a).localeCompare(labelOf(b), language));
+  }
+
   // Pre-fill all cells in alphabetical order; hide unguessed ones
-  const maxRows = Math.max(...columns.map(continent => continentCountries[continent].length));
+  const maxRows = Math.max(...columns.map(continent => sortedCountries[continent].length));
   for (let i = 0; i < maxRows; i++) {
     const tr = tableBody.insertRow();
 
     for (const continent of columns) {
-      const country = continentCountries[continent][i];
+      const country = sortedCountries[continent][i];
       const td = tr.insertCell();
       if (mode !== "world" && continent !== mode) td.classList.add("col-disabled");
 
       if (country) {
-        const isCapitals = gameType === "capitals";
-        const primary = isCapitals ? country.capital[language] : country.name[language];
+        const primary = labelOf(country);
 
         td.dataset.iso2 = country.iso2;
         td.dataset.locacaleName = primary;
