@@ -364,7 +364,9 @@ async function copySummary() {
   lines.push(`⏱️ ${str.timeElapsed} ${formatTime(state.elapsedMs)}`, "");
 
   for (const continent of getPlayedContinents()) {
-    const countries = continentCountries[continent];
+    // Same order as the table: by displayed label, in the current language
+    const countries = [...continentCountries[continent]]
+      .sort((a, b) => labelOf(a).localeCompare(labelOf(b), lang));
     const guessed = countries.filter(c => state.guessed.has(c.iso2));
     const missed = countries.filter(c => !state.guessed.has(c.iso2));
 
